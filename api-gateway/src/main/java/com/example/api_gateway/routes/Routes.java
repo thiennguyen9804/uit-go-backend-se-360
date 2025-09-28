@@ -62,7 +62,7 @@ public class Routes {
         .build();
   }
 
-  // @Bean
+  @Bean
   // this is archived, for right now, no need for fallback route
   public RouterFunction<ServerResponse> fallbackRoute() {
     return route("fallbackRoute")
