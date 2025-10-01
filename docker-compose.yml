@@ -10,6 +10,15 @@ services:
     networks:
       - micro-network
 
+  trip-service:
+    build:
+      context: ./trip-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    networks:
+      - micro-network
+
 networks:
   micro-network:
     driver: bridge

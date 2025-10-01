@@ -9,7 +9,7 @@
 //
 // import jakarta.annotation.security.PermitAll;
 //
-// // @Configuration
+// @Configuration
 // public class SecurityConfig {
 // private final String[] freeResourceUrls = { "/swagger-ui.html",
 // "/swagger-ui/**", "/v3/api-docs/**",
