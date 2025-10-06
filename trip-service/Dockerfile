@@ -18,7 +18,7 @@ WORKDIR /app
 
 
 # Copy the built JAR
-COPY --from=builder /app/target/api-gateway-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=builder /app/target/trip-service-0.0.1-SNAPSHOT.jar app.jar
 
 # Expose port
 EXPOSE 8081
