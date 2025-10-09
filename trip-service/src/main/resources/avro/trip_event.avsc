@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "TripEvent",
+  "namespace": "com.example.microservices.dto",
+  "fields": [
+      {"name": "id", "type": "long"},
+      {"name": "trip_id", "type": "long"},
+      {"name": "event_type", "type": "string"},
+      {"name": "data", "type": ["null", "string"], "default": null},
+      {"name": "created_at", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+    ]
+}
