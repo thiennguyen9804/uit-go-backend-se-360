@@ -3,8 +3,6 @@ package com.example.microservices.mapper;
 import com.example.microservices.dto.TripDto;
 import com.example.microservices.entity.TripEntity;
 
-import lombok.experimental.ExtensionMethod;
-
 public class TripExtension {
   public static TripDto toDto(TripEntity tripEntity) {
 

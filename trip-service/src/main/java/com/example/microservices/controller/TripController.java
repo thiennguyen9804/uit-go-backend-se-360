@@ -2,16 +2,26 @@ package com.example.microservices.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import com.example.microservices.dto.*;
 import com.example.microservices.service.TripService;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/trips")
+@RequestMapping("/api/trips")
+@RequiredArgsConstructor
 public class TripController {
-  private TripService tripService;
+  private final TripService tripService;
+
+  @GetMapping("/hello")
+  @ResponseStatus(code = HttpStatus.ACCEPTED)
+  public String sayHello() {
+    return "Hello from Trip Service!!!";
+  }
 
   @GetMapping("/fare")
   public ResponseEntity<FareResponse> calculateFare(@ModelAttribute FareRequest request) {

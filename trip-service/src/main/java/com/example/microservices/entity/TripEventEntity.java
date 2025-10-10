@@ -28,7 +28,7 @@ public class TripEventEntity {
   @Column(name = "event_type", length = 50)
   private String eventType;
 
-  @Column(name = "data", columnDefinition = "jsonb")
+  @Column(name = "data", columnDefinition = "nvarchar(max)")
   private String data;
 
   @CreationTimestamp

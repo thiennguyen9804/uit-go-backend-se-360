@@ -1,26 +1,27 @@
 package com.example.microservices.service;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-
-import com.example.microservices.entity.*;
-import com.example.microservices.mapper.TripExtension;
-import com.example.microservices.repository.TripEventRepository;
-import com.example.microservices.repository.TripRepository;
-
-import lombok.experimental.ExtensionMethod;
 
 import com.example.microservices.dto.CreateTripRequest;
 import com.example.microservices.dto.FareRequest;
 import com.example.microservices.dto.FareResponse;
 import com.example.microservices.dto.TripDto;
 import com.example.microservices.dto.TripEvent;
+import com.example.microservices.entity.TripEntity;
+import com.example.microservices.entity.TripEventEntity;
+import com.example.microservices.mapper.TripExtension;
+import com.example.microservices.repository.TripEventRepository;
+import com.example.microservices.repository.TripRepository;
+
+import lombok.experimental.ExtensionMethod;
 
 @Service
-@ExtensionMethod({ TripExtension.class })
+@ExtensionMethod({
+    TripExtension.class
+})
 public class TripService {
   private TripRepository tripRepository;
   private KafkaTemplate<String, TripEvent> kafkaTemplate;
