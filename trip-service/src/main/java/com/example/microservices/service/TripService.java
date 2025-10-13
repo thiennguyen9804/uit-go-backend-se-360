@@ -16,16 +16,18 @@ import com.example.microservices.mapper.TripExtension;
 import com.example.microservices.repository.TripEventRepository;
 import com.example.microservices.repository.TripRepository;
 
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.ExtensionMethod;
 
 @Service
 @ExtensionMethod({
     TripExtension.class
 })
+@RequiredArgsConstructor
 public class TripService {
-  private TripRepository tripRepository;
-  private KafkaTemplate<String, TripEvent> kafkaTemplate;
-  private TripEventRepository eventRepository;
+  private final TripRepository tripRepository;
+  private final KafkaTemplate<String, TripEvent> kafkaTemplate;
+  private final TripEventRepository eventRepository;
 
   public FareResponse calculateFare(FareRequest request) {
     return new FareResponse(new BigDecimal(0));
