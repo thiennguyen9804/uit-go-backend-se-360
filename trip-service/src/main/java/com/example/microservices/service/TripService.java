@@ -1,6 +1,7 @@
 package com.example.microservices.service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,6 @@ public class TripService {
 
   public FareResponse calculateFare(FareRequest request) {
     return new FareResponse(new BigDecimal(0));
-
   }
 
   public TripDto createTrip(CreateTripRequest request) {
@@ -59,7 +59,7 @@ public class TripService {
         .setEventType("TRIP_CREATED")
         // .setData("{\"message\": \"Trip created for rider " + request.riderId() +
         // "\"}")
-        // .setCreatedAt(Instant.now().toEpochMilli())
+        .setCreatedAt(Instant.now())
         .build();
     kafkaTemplate.send("trip-events", String.valueOf(tripEntity.getId()), avroEvent);
 
@@ -77,7 +77,6 @@ public class TripService {
   }
 
   public TripDto acceptTrip(Long id, Long driverId) {
-
     return new TripDto(driverId, driverId, driverId, null, null, null, null, null, null, null, null);
   }
 

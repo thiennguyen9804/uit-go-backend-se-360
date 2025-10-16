@@ -1,53 +1,65 @@
-version: "4"
-
-services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    hostname: zookeeper
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
-  broker:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: broker
-    ports:
-      - "9092:9092"
-      - "29092:29092"
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-  schema-registry:
-    image: confluentinc/cp-schema-registry:7.5.0
-    hostname: schema-registry
-    container_name: schema-registry
-    depends_on:
-      - broker
-    ports:
-      - "8185:8185"
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "broker:29092"
-      SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8185
-
-  kafka-ui:
-    container_name: kafka-ui
-    image: provectuslabs/kafka-ui:latest
-    ports:
-      - "8386:8386"
-    depends_on:
-      - broker
-    environment:
-      KAFKA_CLUSTERS_NAME: local
-      KAFKA_CLUSTERS_BOOTSTRAPSERVERS: broker:29092
-      KAFKA_CLUSTERS_SCHEMAREGISTRY: http://schema-registry:8185
-      DYNAMIC_CONFIG_ENABLED: "true"
+# version: "4"
+#
+# services:
+#   zookeeper:
+#     image: confluentinc/cp-zookeeper:7.5.0
+#     hostname: zookeeper
+#     container_name: zookeeper
+#     ports:
+#       - "2181:2181"
+#     environment:
+#       ZOOKEEPER_CLIENT_PORT: 2181
+#       ZOOKEEPER_TICK_TIME: 2000
+#     networks:
+#       - micro-network
+#
+#   broker:
+#     image: confluentinc/cp-kafka:7.5.0
+#     container_name: broker
+#     ports:
+#       - "9092:9092"
+#       - "29092:29092"
+#     depends_on:
+#       - zookeeper
+#     environment:
+#       KAFKA_BROKER_ID: 1
+#       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+#       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+#       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+#       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#     networks:
+#       - micro-network
+#
+#   schema-registry:
+#     image: confluentinc/cp-schema-registry:7.5.0
+#     hostname: schema-registry
+#     container_name: schema-registry
+#     depends_on:
+#       - broker
+#     ports:
+#       - "8185:8185"
+#     environment:
+#       SCHEMA_REGISTRY_HOST_NAME: schema-registry
+#       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "broker:29092"
+#       SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8185
+#     networks:
+#       - micro-network
+#
+#   kafka-ui:
+#     container_name: kafka-ui
+#     image: provectuslabs/kafka-ui:latest
+#     ports:
+#       - "8386:8386"
+#     depends_on:
+#       - broker
+#     environment:
+#       KAFKA_CLUSTERS_NAME: local
+#       KAFKA_CLUSTERS_BOOTSTRAPSERVERS: broker:29092
+#       KAFKA_CLUSTERS_SCHEMAREGISTRY: http://schema-registry:8185
+#       DYNAMIC_CONFIG_ENABLED: "true"
+#     networks:
+#       - micro-network
+# # networks:
+# #   micro-network:
+# #     external: true
+# #     name: micro-network
