@@ -39,6 +39,7 @@ public class TripEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", length = 20, nullable = false)
+  @Builder.Default
   private TripStatus status = TripStatus.PENDING;
 
   @CreationTimestamp
