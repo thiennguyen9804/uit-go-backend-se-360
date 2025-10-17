@@ -1,8 +1,7 @@
-
 {
   "type": "record",
   "name": "TripEvent",
-  "namespace": "com.example.matching_service.dto",
+  "namespace": "com.example.trip_service.dto",
   "fields": [
       {"name": "id", "type": "long"},
       {"name": "trip_id", "type": "long"},

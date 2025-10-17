@@ -1,4 +1,4 @@
-package com.example.microservices.entity;
+package com.example.matching_service.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;

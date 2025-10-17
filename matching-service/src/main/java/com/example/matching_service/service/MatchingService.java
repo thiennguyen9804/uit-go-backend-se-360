@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import com.example.matching_service.dto.TripEvent;
+import com.example.trip_service.dto.TripEvent;
 
 @Service
 class MatchingService {
@@ -14,4 +14,5 @@ class MatchingService {
   public void listen(TripEvent tripEvent) {
     logger.info("MatchingService received trip events");
   }
+
 }

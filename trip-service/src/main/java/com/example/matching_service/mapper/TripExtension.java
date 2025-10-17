@@ -1,7 +1,7 @@
-package com.example.microservices.mapper;
+package com.example.matching_service.mapper;
 
-import com.example.microservices.dto.TripDto;
-import com.example.microservices.entity.TripEntity;
+import com.example.matching_service.dto.TripDto;
+import com.example.matching_service.entity.TripEntity;
 
 public class TripExtension {
   public static TripDto toDto(TripEntity tripEntity) {

@@ -1,4 +1,5 @@
-package com.example.microservices.dto;
+package com.example.matching_service.dto;
+
 
 public record FareRequest(
     String source,

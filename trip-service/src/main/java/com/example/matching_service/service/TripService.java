@@ -1,4 +1,5 @@
-package com.example.microservices.service;
+package com.example.matching_service.service;
+
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -6,16 +7,16 @@ import java.time.Instant;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import com.example.microservices.dto.CreateTripRequest;
-import com.example.microservices.dto.FareRequest;
-import com.example.microservices.dto.FareResponse;
-import com.example.microservices.dto.TripDto;
-import com.example.microservices.dto.TripEvent;
-import com.example.microservices.entity.TripEntity;
-import com.example.microservices.entity.TripEventEntity;
-import com.example.microservices.mapper.TripExtension;
-import com.example.microservices.repository.TripEventRepository;
-import com.example.microservices.repository.TripRepository;
+import com.example.matching_service.dto.CreateTripRequest;
+import com.example.matching_service.dto.FareRequest;
+import com.example.matching_service.dto.FareResponse;
+import com.example.matching_service.dto.TripDto;
+import com.example.matching_service.entity.TripEntity;
+import com.example.matching_service.entity.TripEventEntity;
+import com.example.matching_service.mapper.TripExtension;
+import com.example.matching_service.repository.TripEventRepository;
+import com.example.matching_service.repository.TripRepository;
+import com.example.trip_service.dto.TripEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.ExtensionMethod;
@@ -49,7 +50,8 @@ public class TripService {
     TripEventEntity eventEntity = TripEventEntity.builder()
         .tripId(tripEntity.getId())
         .eventType("TRIP_CREATED")
-        .data("{\"message\": \"Trip created for rider " + request.riderId() + "\"}")
+        // .data("{\"message\": \"Trip created for rider " + request.riderId() + "\"}")
+        .data("")
         .build();
 
     eventRepository.save(eventEntity);

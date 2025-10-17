@@ -10,7 +10,7 @@
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
   <groupId>com.example</groupId>
-  <artifactId>microservices</artifactId>
+  <artifactId>trip_service</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>trip-service</name>
   <description>Trip Service</description>

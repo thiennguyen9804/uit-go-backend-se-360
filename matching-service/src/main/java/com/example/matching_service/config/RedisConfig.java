@@ -17,17 +17,17 @@ public class RedisConfig {
   @Value("${redis.port}")
   private int redisPort;
 
-  @Bean
-  public LettuceConnectionFactory redisConnectionFactory() {
-    return new LettuceConnectionFactory(new RedisStandaloneConfiguration(redisHost, redisPort));
-  }
+    @Bean
+    LettuceConnectionFactory redisConnectionFactory() {
+      return new LettuceConnectionFactory(new RedisStandaloneConfiguration(redisHost, redisPort));
+    }
 
-  @Bean
-  @Primary
-  public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-    RedisTemplate<Object, Object> template = new RedisTemplate<>();
-    template.setConnectionFactory(redisConnectionFactory);
-    return template;
-  }
+    @Bean
+    @Primary
+    RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+      RedisTemplate<Object, Object> template = new RedisTemplate<>();
+      template.setConnectionFactory(redisConnectionFactory);
+      return template;
+    }
 
 }

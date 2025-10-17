@@ -1,8 +1,10 @@
-package com.example.microservices.repository;
+package com.example.matching_service.repository;
+
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.example.microservices.entity.TripEntity;
+import com.example.matching_service.entity.TripEntity;
+
 
 public interface TripRepository extends JpaRepository<TripEntity, Long> {
 }

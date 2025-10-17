@@ -1,4 +1,4 @@
-package com.example.microservices.dto;
+package com.example.matching_service.dto;
 
 import java.math.BigDecimal;
 

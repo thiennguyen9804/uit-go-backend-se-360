@@ -1,9 +1,9 @@
-package com.example.microservices.dto;
+package com.example.matching_service.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.example.microservices.entity.TripEntity.TripStatus;
+import com.example.matching_service.entity.TripEntity.TripStatus;
 
 public record TripDto(
     Long id,

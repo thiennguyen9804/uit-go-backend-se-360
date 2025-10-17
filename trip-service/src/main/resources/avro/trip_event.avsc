@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "TripEvent",
-  "namespace": "com.example.microservices.dto",
+  "namespace": "com.example.trip_service.dto",
   "fields": [
       {"name": "id", "type": "long"},
       {"name": "trip_id", "type": "long"},

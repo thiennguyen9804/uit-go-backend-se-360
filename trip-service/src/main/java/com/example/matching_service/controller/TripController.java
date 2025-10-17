@@ -1,11 +1,13 @@
-package com.example.microservices.controller;
+package com.example.matching_service.controller;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import com.example.microservices.dto.*;
-import com.example.microservices.service.TripService;
+
+import com.example.matching_service.dto.CreateTripRequest;
+import com.example.matching_service.dto.FareRequest;
+import com.example.matching_service.dto.FareResponse;
+import com.example.matching_service.dto.TripDto;
+import com.example.matching_service.service.TripService;
 
 import lombok.RequiredArgsConstructor;
 
