@@ -7,8 +7,12 @@ spring:
         - id: trip-service
           uri: http://trip-service:8081
           predicates:
-            - Path=/api/trips, /api/trips/{segment}
+            - Path=/api/trips/**
 
+        - id: notification-service
+          uri: http://notification-service:8084
+          predicates:
+            - Path=/api/notifications/**
 server:
   port: 9000
 # spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8181/realms/spring-microservices-security-realm
