@@ -12,4 +12,5 @@ public interface IUserService
     Task RequestResetPasswordAsync(string email);
     Task ChangePasswordAsync(Guid userId, string oldPassword,  string newPassword);
     Task ConfirmResetPasswordAsync(string email, string code, string newPassword);
+
 }

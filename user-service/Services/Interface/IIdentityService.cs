@@ -13,6 +13,7 @@ public interface IIdentityService
     Task<string> GeneratePasswordResetTokenAsync(string email);
     Task ChangePasswordAsync(Guid userId, string oldPassword, string newPassword);
     Task ResetPasswordAsync(string email, string code, string newPassword);
-    
-   
+
+
+    Task<UserDto> UpdateUserNameAsync(Guid id, string userName);
 }

@@ -1,12 +1,14 @@
-﻿using user_service.Dtos;
+﻿using AutoMapper;
+using user_service.Dtos;
 using user_service.Services.Interface;
 
 namespace user_service.Services;
 
-public class UserService(IIdentityService identityService, IEmailService emailService) : IUserService
+public class UserService(IIdentityService identityService, IEmailService emailService,IMapper mapper) : IUserService
 {
     private readonly IIdentityService _identityService = identityService;
     private readonly IEmailService _emailService = emailService;
+    private IMapper _mapper= mapper;
     public async Task<UserDto> GetByIdAsync(Guid id)
     {
         return await _identityService.GetByIdAsync(id);
@@ -51,4 +53,6 @@ public class UserService(IIdentityService identityService, IEmailService emailSe
     {
         await _identityService.ResetPasswordAsync(email, code, newPassword);
     }
+
+  
 }

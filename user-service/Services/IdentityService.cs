@@ -126,6 +126,18 @@ public class IdentityService(
             throw new Exception($"{result.Errors.First().Description}");
     }
 
-    
-
+    public async Task<UserDto> UpdateUserNameAsync(Guid id, string userName)
+    {
+        var user = await userManager.FindByIdAsync(id.ToString());
+        if (user == null)
+            throw new Exception($"User not found with id: {id}");
+        user.UserName = userName;
+        await userManager.UpdateAsync(user);
+        return new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email!,
+            Username = user.UserName,
+        };
+    }
 }

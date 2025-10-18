@@ -76,8 +76,8 @@ public static class ServiceCollectionExtensions
             });
         });
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
-
-        services.AddServices(config);
+        services.AddServices(config)
+            .AddPersistences(config);
         services.AddAuthorization(options =>
         {
         });
