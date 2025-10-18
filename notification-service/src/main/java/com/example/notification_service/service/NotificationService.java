@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class NotificationService {
   private final DeviceTokenRepository deviceTokenRepository;
 
-  public void saveToken(String userId, String fcmToken) {
+  public void saveToken(Long userId, String fcmToken) {
     DeviceToken deviceToken = DeviceToken.builder()
         .userId(userId)
         .fcmToken(fcmToken)

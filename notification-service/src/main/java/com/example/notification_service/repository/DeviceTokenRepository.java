@@ -4,5 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.notification_service.entity.DeviceToken;
 
-public interface DeviceTokenRepository extends JpaRepository<DeviceToken, String> {
+public interface DeviceTokenRepository extends JpaRepository<DeviceToken, Long> {
 }

@@ -19,7 +19,7 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
   @Override
   public void sendNotification(SendNotificationRequest request,
       StreamObserver<SendNotificationResponse> responseObserver) {
-    String driverId = request.getDriverId();
+    Long driverId = request.getDriverId();
     String fcmToken = deviceTokenRepository.findById(driverId)
         .map(DeviceToken::getFcmToken)
         .orElse(null);
@@ -38,7 +38,7 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
     Message message = Message.builder()
         .setToken(fcmToken)
         .setNotification(notification)
-        .putData("driverId", driverId)
+        .putData("driverId", driverId.toString())
         .build();
     try {
       String response = FirebaseMessaging.getInstance().send(message);
