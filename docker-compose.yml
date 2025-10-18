@@ -1,7 +1,5 @@
 version: "3.8"
 
-# include:
-#   - path: ./trip-service/docker-compose.yml
 
 services:
   api-gateway:
@@ -10,8 +8,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "9000:9000"
-    # networks:
-    #   - micro-network
     depends_on:
       - trip-service
 
@@ -21,8 +17,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
-    # networks:
-    #   - micro-network
 
   matching-service:
     build:
@@ -30,16 +24,21 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8083:8083"
-    # networks:
-    #   - micro-network
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
+      - "28084:28084"
 
   redis:
     image: redis:7.0-alpine
     container_name: redis
     ports:
       - "6379:6379"
-    # volumes:
-    # - redis-data:/data
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     hostname: zookeeper
