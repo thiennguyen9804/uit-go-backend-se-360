@@ -21,7 +21,7 @@ class MatchingService {
     logger.info("MatchingService received trip events");
     Long driverId = 1L;
     boolean success = notificationClient.sendNotification(
-        driverId.toString(),
+        driverId,
         "New Trip Assignment",
         "You have been assigned a new trip: " + tripEvent.getTripId()
     );

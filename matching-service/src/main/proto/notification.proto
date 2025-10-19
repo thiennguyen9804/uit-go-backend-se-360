@@ -10,7 +10,7 @@ service NotificationService {
 }
 
 message SendNotificationRequest {
-  string driver_id = 1;
+  int64 driver_id = 1;
   string title = 2;
   string body = 3;
 }
