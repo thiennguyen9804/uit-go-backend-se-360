@@ -57,5 +57,4 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
     }
     responseObserver.onCompleted();
   }
-
 }

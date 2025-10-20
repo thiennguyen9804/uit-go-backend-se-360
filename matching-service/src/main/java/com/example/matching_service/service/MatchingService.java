@@ -19,7 +19,7 @@ class MatchingService {
   @KafkaListener(topics = "trip-events")
   public void listen(TripEvent tripEvent) {
     logger.info("MatchingService received trip events");
-    Long driverId = 1L;
+    long driverId = 1L;
     boolean success = notificationClient.sendNotification(
         driverId,
         "New Trip Assignment",

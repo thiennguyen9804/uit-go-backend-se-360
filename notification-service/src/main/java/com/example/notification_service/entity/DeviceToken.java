@@ -17,7 +17,6 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "device_tokens")
 @Data
-@Builder
 public class DeviceToken {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
