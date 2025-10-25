@@ -1,7 +1,7 @@
 package com.example.notification_service.service;
 
+import com.example.notification_service.proto.*;
 import org.springframework.grpc.server.service.GrpcService;
-
 import com.example.notification_service.entity.DeviceToken;
 import com.example.notification_service.repository.DeviceTokenRepository;
 import com.google.firebase.messaging.FirebaseMessaging;
