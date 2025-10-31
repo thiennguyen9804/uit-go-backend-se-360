@@ -82,11 +82,11 @@ public class TripService {
   }
 
   public TripDto cancelTrip(Long id, Long userId) {
-    return new TripDto(userId, userId, userId, null, null, null, null, null, null, null, null);
+    return new TripDto(userId, userId, userId, 0, 0, 0, 0, null, null, null, null);
   }
 
   public TripDto acceptTrip(Long id, Long driverId) {
-    return new TripDto(driverId, driverId, driverId, null, null, null, null, null, null, null, null);
+    return new TripDto(driverId, driverId, driverId, 0, 0, 0, 0, null, null, null, null);
   }
 
 }
