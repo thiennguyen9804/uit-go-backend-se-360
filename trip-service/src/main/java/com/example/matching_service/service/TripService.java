@@ -11,6 +11,7 @@ import com.example.matching_service.dto.CreateTripRequest;
 import com.example.matching_service.dto.FareRequest;
 import com.example.matching_service.dto.FareResponse;
 import com.example.matching_service.dto.TripDto;
+import com.example.matching_service.dto.TripLocationData;
 import com.example.matching_service.entity.TripEntity;
 import com.example.matching_service.entity.TripEventEntity;
 import com.example.matching_service.mapper.TripExtension;
@@ -20,6 +21,7 @@ import com.example.trip_service.dto.TripEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.ExtensionMethod;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @ExtensionMethod({
@@ -30,6 +32,7 @@ public class TripService {
   private final TripRepository tripRepository;
   private final KafkaTemplate<String, TripEvent> kafkaTemplate;
   private final TripEventRepository eventRepository;
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   public FareResponse calculateFare(FareRequest request) {
     return new FareResponse(new BigDecimal(0));
@@ -46,12 +49,19 @@ public class TripService {
         .status(TripEntity.TripStatus.PENDING)
         .build();
 
+    TripLocationData data = new TripLocationData(
+        request.sourceLat(),
+        request.sourceLng(),
+        request.destLat(),
+        request.destLng());
+    String dataAsString = objectMapper.writeValueAsString(data);
+
+
     tripEntity = tripRepository.save(tripEntity);
     TripEventEntity eventEntity = TripEventEntity.builder()
         .tripId(tripEntity.getId())
         .eventType("TRIP_CREATED")
-        // .data("{\"message\": \"Trip created for rider " + request.riderId() + "\"}")
-        .data("")
+        .data(dataAsString)
         .build();
 
     eventRepository.save(eventEntity);
@@ -59,14 +69,12 @@ public class TripService {
         .setId(System.currentTimeMillis())
         .setTripId(tripEntity.getId())
         .setEventType("TRIP_CREATED")
-        // .setData("{\"message\": \"Trip created for rider " + request.riderId() +
-        // "\"}")
+        .setData(dataAsString)
         .setCreatedAt(Instant.now())
         .build();
     kafkaTemplate.send("trip-events", String.valueOf(tripEntity.getId()), avroEvent);
 
     return tripEntity.toDto();
-
   }
 
   public TripDto getTrip(Long id) {
@@ -75,7 +83,6 @@ public class TripService {
 
   public TripDto cancelTrip(Long id, Long userId) {
     return new TripDto(userId, userId, userId, null, null, null, null, null, null, null, null);
-
   }
 
   public TripDto acceptTrip(Long id, Long driverId) {
