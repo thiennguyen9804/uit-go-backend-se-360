@@ -4,6 +4,9 @@ namespace user_service.Entities;
 
 public class ApplicationUser : IdentityUser
 {
-    public virtual List<DriverRegister> DriverRegisters { get; set; }
+    // Optional full name for the user (display name)
+    public string? FullName { get; set; }
+
+    public virtual List<DriverRegister> DriverRegisters { get; set; } = new();
 }
 

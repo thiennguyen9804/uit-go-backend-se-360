@@ -4,11 +4,14 @@ namespace user_service.Dtos;
 
 public class DriverRegisterDto 
 {
+    public Guid Id { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public RegisterStatus Status { get; set; } = RegisterStatus.Pending;
-    public Guid UserId { get; set; }
+    public string UserId { get; set; }
     public string VehicleNumber { get; set; }
+    public string PhoneNumber { get; set; }
+
     public VehicleType VehicleType { get; set; }
     public string Name { get; set; }
 }

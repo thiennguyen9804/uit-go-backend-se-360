@@ -9,6 +9,7 @@ using Microsoft.OpenApi.Models;
 using user_service.Dtos;
 using user_service.Entities;
 using user_service.Service;
+using user_service.Persistence;
 
 
 namespace user_service;
@@ -18,7 +19,12 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddAppServices(this IServiceCollection services, IConfiguration config)
     {
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(config.GetConnectionString("DefaultConnection"),
+                sqlOptions => sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,            
+                    maxRetryDelay: TimeSpan.FromSeconds(10),  
+                    errorNumbersToAdd: null      
+                )));
 
         services.AddIdentity<ApplicationUser, IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -27,7 +33,13 @@ public static class ServiceCollectionExtensions
         var jwtSection = config.GetSection("Jwt");
         var key = Encoding.UTF8.GetBytes(jwtSection["Key"] ?? "super_secret_key");
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        // Ensure JWT is the default authentication and challenge scheme for API endpoints
+        services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
             .AddJwtBearer(opt =>
             {
                 opt.TokenValidationParameters = new TokenValidationParameters
@@ -42,6 +54,31 @@ public static class ServiceCollectionExtensions
                     ClockSkew = TimeSpan.Zero
                 };
             });
+
+        // Prevent Identity cookie authentication from redirecting API calls to the login page
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.Events.OnRedirectToLogin = ctx =>
+            {
+                if (ctx.Request.Path.StartsWithSegments("/api") || ctx.Request.Path.StartsWithSegments(new PathString("/api")))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return Task.CompletedTask;
+                }
+                ctx.Response.Redirect(ctx.RedirectUri);
+                return Task.CompletedTask;
+            };
+            options.Events.OnRedirectToAccessDenied = ctx =>
+            {
+                if (ctx.Request.Path.StartsWithSegments("/api") || ctx.Request.Path.StartsWithSegments(new PathString("/api")))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    return Task.CompletedTask;
+                }
+                ctx.Response.Redirect(ctx.RedirectUri);
+                return Task.CompletedTask;
+            };
+        });
 
         services.AddCors(options =>
         {
@@ -78,6 +115,9 @@ public static class ServiceCollectionExtensions
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
         services.AddServices(config)
             .AddPersistences(config);
+
+        // Unit of Work
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddAuthorization(options =>
         {
         });

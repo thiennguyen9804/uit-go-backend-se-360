@@ -2,14 +2,18 @@
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
-EXPOSE 8081
+
+USER root
+RUN mkdir -p /var/lib/apt/lists/partial &&   apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["user-service.csproj", "./"]
+COPY proto-contracts /src/proto-contracts
+COPY ["./user-service/user-service.csproj", "./"]
 RUN dotnet restore "user-service.csproj"
-COPY . .
+COPY ./user-service .
+
 WORKDIR "/src/"
 RUN dotnet build "./user-service.csproj" -c $BUILD_CONFIGURATION -o /app/build
 

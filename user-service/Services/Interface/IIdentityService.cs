@@ -16,4 +16,5 @@ public interface IIdentityService
 
 
     Task<UserDto> UpdateUserNameAsync(Guid id, string userName);
+    Task<UserDto> UpdateUserContactAsync(Guid id, string userName, string phoneNumber);
 }

@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using user_service.Dtos;
 using user_service.Entities;
+using user_service.GrpcClient;
 using user_service.Repositories;
+using user_service.Persistence;
 using user_service.Services.Interface;
 
 namespace user_service.Services;
@@ -10,12 +12,21 @@ public class DriverRegisterService:IDriverRegisterService
 {
     protected IDriverRegisterRepository _driverRegisterRepository;
     protected IIdentityService _identityService;
+    protected DriverGrpcClient _driverGrpcClient;
+    protected IUnitOfWork _unitOfWork;
 
-    public DriverRegisterService(IDriverRegisterRepository driverRegisterRepository, IMapper mapper, IIdentityService identityService)
+    public DriverRegisterService(
+        IDriverRegisterRepository driverRegisterRepository, 
+        IMapper mapper, 
+        IIdentityService identityService,
+        DriverGrpcClient driverGrpcClient,
+        IUnitOfWork unitOfWork)
     {
         _driverRegisterRepository = driverRegisterRepository;
-        _mapper = mapper;
-        _identityService = identityService;
+    _mapper = mapper;
+    _identityService = identityService;
+        _driverGrpcClient = driverGrpcClient;
+        _unitOfWork = unitOfWork;
     }
 
     protected IMapper _mapper;
@@ -36,19 +47,25 @@ public class DriverRegisterService:IDriverRegisterService
             throw new Exception("You are having the pending register or already approved");
         }
 
-        await _identityService.UpdateUserNameAsync(userId, registerDriverrDto.Name);
-        var driverRegister = _mapper.Map<DriverRegister>(registerDriverrDto);
-        driverRegister.UserId = userId;
+        await _identityService.UpdateUserContactAsync(userId, registerDriverrDto.Name, registerDriverrDto.PhoneNumber);
+    var driverRegister = _mapper.Map<DriverRegister>(registerDriverrDto);
+    // ApplicationUser.Id is a string (Identity). store the Guid as string so EF can link the navigation.
+    driverRegister.UserId = userId.ToString();
         await _driverRegisterRepository.AddAsync(driverRegister);
         var dto = _mapper.Map<DriverRegisterDto>(driverRegister);
         dto.Name = registerDriverrDto.Name;
+        dto.PhoneNumber = registerDriverrDto.PhoneNumber;
         return dto;
     }
 
     public async Task<PaginatedResult<DriverRegisterDto>> GetMyDriverRegistersAsync(Guid userId, PaginationRequest paginationRequest)
     {
         var registers = await _driverRegisterRepository.GetMyDriverRegistersAsync(userId, paginationRequest.Page, paginationRequest.Size);
-        var dtos = registers.Data.Select(x => _mapper.Map<DriverRegisterDto>(x));
+        var dtos = registers.Data.Select(x =>
+        {
+            Console.WriteLine($"{x.User?.FullName} : {x.User?.PhoneNumber} ");
+            return _mapper.Map<DriverRegisterDto>(x);
+        }).ToList();
         return new PaginatedResult<DriverRegisterDto>
         {
             Data = dtos,
@@ -80,10 +97,18 @@ public class DriverRegisterService:IDriverRegisterService
         {
             throw new Exception("Driver Register not found");
         }
-        register.Status = updateRegisterDriverrDto.Status;
-        register.UpdatedAt = DateTime.Now;
-        await _driverRegisterRepository.UpdateAsync(register);
-        // grpc call insert into driver service
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            register.Status = updateRegisterDriverrDto.Status;
+            register.UpdatedAt = DateTime.Now;
+            await _driverRegisterRepository.UpdateAsync(register);
+
+            var grpcSuccess = await _driverGrpcClient.CreateDriverAsync(register);
+            if (!grpcSuccess)
+                throw new Exception("Driver service reported failure creating driver");
+        });
+
         return _mapper.Map<DriverRegisterDto>(register);
     }
 }

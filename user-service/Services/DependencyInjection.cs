@@ -18,6 +18,8 @@ public static class DependencyInjection
                 config["Mailtrap:Password"]
             ));
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<GrpcClient.DriverGrpcClient>();
+        services.AddScoped<IDriverRegisterService, DriverRegisterService>();
         return services;
     }
 }

@@ -1,23 +1,5 @@
 ﻿version: "3.9"
 services:
-  # local dev 
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: sqlserver
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong!Passw0rd
-    ports:
-      - "1433:1433"
-    volumes:
-      - ./data/sqlserver:/var/opt/mssql
-    healthcheck:
-      test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong!Passw0rd' -Q 'SELECT 1' -C" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-
   user-service:
     build:
       context: .
@@ -27,8 +9,13 @@ services:
       - "8080:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=UserDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True
-    # local dev 
-    depends_on:
-      sqlserver:
-        condition: service_healthy
+  driver-service:
+    build:
+      context: ../driver-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    network_mode: host
+

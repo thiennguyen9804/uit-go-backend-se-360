@@ -4,4 +4,11 @@
 /user-service/data/
 /user-service/obj/
 /user-service/packages-microsoft-prod.deb
+/driver-service/appsettings.Development.json
+/driver-service/.idea/
+/driver-service/bin/
+/driver-service/data/
+/driver-service/obj/
+/user-service/proto-contracts/
+/driver-service/proto-contracts/
 

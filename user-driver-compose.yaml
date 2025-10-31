@@ -1,0 +1,34 @@
+version: "3.9"
+
+networks:
+  app-net:
+    driver: bridge
+
+services:
+  driver-service:
+    build:
+      context: .
+      dockerfile: driver-service/Dockerfile
+    container_name: driver-service
+    ports:
+      - "8081:8081"  # REST
+      - "8386:8386"  # gRPC
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - app-net
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: user-service
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+    depends_on:
+      - driver-service
+    networks:
+      - app-net

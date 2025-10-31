@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package driver;
+
+option csharp_namespace = "ProtoContracts.Driver";
+
+import "google/protobuf/timestamp.proto";
+
+message CreateDriverRequest {
+  string id = 1;                
+  string name = 2;
+  string phoneNumber = 3;
+  string vehicleNumber = 4;
+  string vehicleType = 5;
+}
+
+message CreateDriverReply {
+  bool success = 1;
+  string message = 2;
+  string id = 3;                
+  google.protobuf.Timestamp createdAt = 4;
+}
+
+service GrpcDriverService {
+  rpc CreateDriver (CreateDriverRequest) returns (CreateDriverReply);
+}

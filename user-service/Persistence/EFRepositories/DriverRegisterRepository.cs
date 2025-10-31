@@ -13,15 +13,16 @@ public class DriverRegisterRepository:GenericRepository<DriverRegister>,IDriverR
 
     public async Task<DriverRegister?> GetUserDriverRegisterByIdAsync(Guid id)
     {
-        return  _dbSet.Include(dr=>dr.User)
-            .FirstOrDefault(dr=>dr.Id == id);
+        return await _dbSet.Include(dr => dr.User)
+            .FirstOrDefaultAsync(dr => dr.Id == id);
     }
 
     public async Task<DriverRegister?> GetLatestRegisterAsync(Guid userId)
     {
+        var userIdStr = userId.ToString();
         return await _dbSet
             .Include(dr => dr.User)
-            .Where(dr => dr.UserId == userId)
+            .Where(dr => dr.UserId == userIdStr)
             .OrderByDescending(dr => dr.CreatedAt) 
             .FirstOrDefaultAsync();
     }
@@ -31,9 +32,10 @@ public class DriverRegisterRepository:GenericRepository<DriverRegister>,IDriverR
         int paginationRequestPage,
         int paginationRequestSize)
     {
+        var userIdStr = userId.ToString();
         var query = _dbSet
             .Include(dr => dr.User)
-            .Where(dr => dr.UserId == userId)
+            .Where(dr => dr.UserId == userIdStr)
             .OrderByDescending(dr => dr.CreatedAt);
 
         var totalCount = await query.CountAsync();

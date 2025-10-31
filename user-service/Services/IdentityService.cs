@@ -140,4 +140,22 @@ public class IdentityService(
             Username = user.UserName,
         };
     }
+
+    public async Task<UserDto> UpdateUserContactAsync(Guid id, string userName, string phoneNumber)
+    {
+        var user = await userManager.FindByIdAsync(id.ToString());
+        if (user == null)
+            throw new Exception($"User not found with id: {id}");
+        user.FullName = userName;
+        user.PhoneNumber = phoneNumber;
+        var result = await userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+            throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+        return new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email!,
+            Username = user.UserName,
+        };
+    }
 }

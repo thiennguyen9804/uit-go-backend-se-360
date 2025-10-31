@@ -20,7 +20,7 @@ public class JwtService(IConfiguration config) : IJwtService
         {
             new Claim("userId", userId.ToString()),
             new Claim("email", email),
-            new Claim(ClaimTypes.Role, nameof(role))
+            new Claim(ClaimTypes.Role, role)
         };
         
         var token = new JwtSecurityToken(
