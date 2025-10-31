@@ -3,10 +3,33 @@
   "name": "TripEvent",
   "namespace": "com.example.trip_service.dto",
   "fields": [
-      {"name": "id", "type": "long"},
-      {"name": "trip_id", "type": "long"},
-      {"name": "event_type", "type": "string"},
-      {"name": "data", "type": ["null", "string"], "default": null},
-      {"name": "created_at", "type": {"type": "long", "logicalType": "timestamp-millis"}}
-    ]
+    {
+      "name": "id",
+      "type": "long"
+    },
+    {
+      "name": "trip_id",
+      "type": "long"
+    },
+    {
+      "name": "event_type",
+      "type": "string"
+    },
+    {
+      "name": "data",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null,
+      "doc": "JSON string chứa thông tin bổ sung. Ví dụ: { \"source_lat\": 10.8411, \"source_lng\": 106.8001, \"dest_lat\": ..., \"rider_name\": ... }"
+    },
+    {
+      "name": "created_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    }
+  ]
 }

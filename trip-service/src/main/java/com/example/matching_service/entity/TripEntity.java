@@ -23,16 +23,16 @@ public class TripEntity {
   private Long driverId;
 
   @Column(name = "source_lat", nullable = false, precision = 9, scale = 6)
-  private BigDecimal sourceLat;
+  private double sourceLat;
 
   @Column(name = "source_lng", nullable = false, precision = 9, scale = 6)
-  private BigDecimal sourceLng;
+  private double sourceLng;
 
   @Column(name = "dest_lat", nullable = false, precision = 9, scale = 6)
-  private BigDecimal destLat;
+  private double destLat;
 
   @Column(name = "dest_lng", nullable = false, precision = 9, scale = 6)
-  private BigDecimal destLng;
+  private double destLng;
 
   @Column(name = "fare", nullable = false, precision = 10, scale = 2)
   private BigDecimal fare;
