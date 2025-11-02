@@ -1,8 +1,6 @@
 package com.example.matching_service.service;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -10,10 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.GeoResults;
-import org.springframework.data.geo.Metric;
 import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
-import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.connection.RedisGeoCommands.GeoLocation;
 import org.springframework.data.redis.core.GeoOperations;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -34,8 +30,8 @@ import lombok.RequiredArgsConstructor;
 class MatchingService {
   private static final Logger logger = LoggerFactory.getLogger(MatchingService.class);
   private final NotificationGrpcClient notificationClient;
-  private RedisTemplate<String, String> redisTemplate;
-  private GeoOperations<String, String> geoOps = redisTemplate.opsForGeo();
+  private final RedisTemplate<String, String> redisTemplate;
+  private final GeoOperations<String, String> geoOps;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @KafkaListener(topics = "trip-events")
@@ -63,7 +59,7 @@ class MatchingService {
         new Point(lng, lat),
         new Distance(radiusKm, Metrics.KILOMETERS));
 
-    GeoResults<GeoLocation<String>> results = geoOps.radius("driver:location", circle);
+    GeoResults<GeoLocation<String>> results = geoOps.radius("drivers:geo:free", circle);
 
     return results.getContent().stream()
         .map(result -> {
