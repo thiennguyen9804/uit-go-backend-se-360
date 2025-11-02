@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.GeoOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
 @Configuration
@@ -24,10 +25,15 @@ public class RedisConfig {
 
     @Bean
     @Primary
-    RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-      RedisTemplate<Object, Object> template = new RedisTemplate<>();
+    RedisTemplate<String, String> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+      RedisTemplate<String, String> template = new RedisTemplate<>();
       template.setConnectionFactory(redisConnectionFactory);
       return template;
+    }
+
+    @Bean
+    GeoOperations<String, String> geoOperations(RedisTemplate<String, String> redisTemplate) {
+        return redisTemplate.opsForGeo();
     }
 
 }
