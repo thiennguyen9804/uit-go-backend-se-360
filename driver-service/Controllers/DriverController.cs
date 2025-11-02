@@ -5,7 +5,7 @@ using driver_service.Dtos;
 namespace driver_service.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/drivers")]
 public class DriverController : BaseController
 {
     private readonly IDriverService _service;

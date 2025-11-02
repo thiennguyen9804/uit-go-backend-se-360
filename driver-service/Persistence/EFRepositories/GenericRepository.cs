@@ -40,7 +40,7 @@ public class GenericRepository<T>
         }
         catch (Exception ex)
         {
-            throw new DuplicateNameException(ex.Message);
+            throw new Exception(ex.Message);
         }
     }
 

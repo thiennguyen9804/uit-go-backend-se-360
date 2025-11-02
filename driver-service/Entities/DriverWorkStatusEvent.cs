@@ -12,10 +12,12 @@ public class DriverWorkStatusEvent
     public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
     public DateTime OnAt { get; set; } = DateTime.UtcNow;
     public DateTime? OffAt { get; set; }
+
 }
 
 public enum WorkStatus
 {
     On,
+    InTrip,
     Off
 }

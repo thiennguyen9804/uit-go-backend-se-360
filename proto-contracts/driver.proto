@@ -23,4 +23,20 @@ message CreateDriverReply {
 
 service GrpcDriverService {
   rpc CreateDriver (CreateDriverRequest) returns (CreateDriverReply);
+  // Get driver info by id
+  rpc GetDriver (GetDriverRequest) returns (GetDriverReply);
+}
+
+message GetDriverRequest {
+  string id = 1;
+}
+
+message GetDriverReply {
+  bool found = 1;
+  string id = 2;
+  string name = 3;
+  string phoneNumber = 4;
+  string vehicleNumber = 5;
+  string vehicleType = 6;
+  google.protobuf.Timestamp createdAt = 7;
 }

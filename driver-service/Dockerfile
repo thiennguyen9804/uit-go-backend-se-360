@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 8081
-EXPOSE 8386
+EXPOSE 8082
+EXPOSE 28082
 
 USER root
 RUN mkdir -p /var/lib/apt/lists/partial &&   apt-get update && apt-get install -y ca-certificates && update-ca-certificates

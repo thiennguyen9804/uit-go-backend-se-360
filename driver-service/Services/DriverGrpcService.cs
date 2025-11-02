@@ -29,4 +29,34 @@ public class DriverGrpcService : GrpcDriverService.GrpcDriverServiceBase
         };
 
     }
+
+    public override async Task<GetDriverReply> GetDriver(GetDriverRequest request, ServerCallContext context)
+    {
+        if (string.IsNullOrEmpty(request.Id))
+        {
+            return new GetDriverReply { Found = false };
+        }
+
+        if (!Guid.TryParse(request.Id, out var guid))
+        {
+            return new GetDriverReply { Found = false };
+        }
+
+        var driver = await _driverRepository.GetByIdAsync(guid);
+        if (driver == null)
+        {
+            return new GetDriverReply { Found = false };
+        }
+
+        return new GetDriverReply
+        {
+            Found = true,
+            Id = driver.Id.ToString(),
+            Name = driver.Name ?? string.Empty,
+            PhoneNumber = driver.PhoneNumber ?? string.Empty,
+            VehicleNumber = driver.VehicleNumber ?? string.Empty,
+            VehicleType = driver.VehicleType ?? string.Empty,
+            CreatedAt = Timestamp.FromDateTime(driver.CreatedAt)
+        };
+    }
 }
