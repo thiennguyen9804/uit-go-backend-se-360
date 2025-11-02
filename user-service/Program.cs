@@ -1,6 +1,7 @@
 using Grpc.Net.Client.Web;
 using user_service;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 var builder = WebApplication.CreateBuilder(args);
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
@@ -15,7 +16,7 @@ builder.Services.AddAppServices(builder.Configuration);
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 builder.Services.AddGrpcClient<ProtoContracts.Driver.GrpcDriverService.GrpcDriverServiceClient>(o =>
 {
-    o.Address = new Uri("http://driver-service:8386");
+    o.Address = new Uri("http://driver-service:28082");
 })
 .ConfigureChannel(options =>
 {
@@ -49,6 +50,11 @@ using (var scope = app.Services.CreateScope())
     {
         var db = services.GetRequiredService<ApplicationDbContext>();
         db.Database.Migrate();
+    }
+    catch (SqlException sqlEx) when (sqlEx.Number == 1801)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning(sqlEx, "Database already exists. Skipping create.");
     }
     catch (Exception ex)
     {

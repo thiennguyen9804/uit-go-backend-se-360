@@ -11,8 +11,8 @@ services:
       dockerfile: driver-service/Dockerfile
     container_name: driver-service
     ports:
-      - "8081:8081"  # REST
-      - "8386:8386"  # gRPC
+      - "8082:8082"  # REST
+      - "28082:28082"  # gRPC
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
@@ -41,14 +41,28 @@ services:
     container_name: mssql
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=Your_password123
+      - SA_PASSWORD=YourStrong@Passw0rd
     ports:
       - "1433:1433"
     restart: unless-stopped
     networks:
       - app-net
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Your_password123", "-Q", "SELECT 1"]
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourStrong@Passw0rd", "-Q", "SELECT 1"]
       interval: 10s
       timeout: 5s
       retries: 12
+    volumes:
+      - mssql-data:/var/opt/mssql   # <-- đây là named volume
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    restart: unless-stopped
+    networks:
+      - app-net
+
+volumes:
+  mssql-data:
