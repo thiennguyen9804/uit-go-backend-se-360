@@ -10,7 +10,7 @@ using user_service.Dtos;
 using user_service.Entities;
 using user_service.Service;
 using user_service.Persistence;
-
+using user_service.Mapping;
 
 namespace user_service;
 
@@ -82,11 +82,13 @@ public static class ServiceCollectionExtensions
 
         services.AddCors(options =>
         {
-            options.AddPolicy("AllowFrontend", policy =>
-                policy.WithOrigins("http://localhost:3000")
-                      .AllowAnyHeader()
-                      .AllowAnyMethod()
-                      .AllowCredentials());
+               options.AddPolicy("AllowAllOrigins", policy =>
+                {
+                    policy
+                        .AllowAnyOrigin()    
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                });
         });
 
         services.AddEndpointsApiExplorer();
@@ -112,7 +114,8 @@ public static class ServiceCollectionExtensions
                 { jwtScheme, Array.Empty<string>() }
             });
         });
-        services.AddAutoMapper(Assembly.GetExecutingAssembly());
+        services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
         services.AddServices(config)
             .AddPersistences(config);
 

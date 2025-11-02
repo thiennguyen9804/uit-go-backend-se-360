@@ -12,8 +12,8 @@ using user_service;
 namespace user_service.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251024014208_Fullname")]
-    partial class Fullname
+    [Migration("20251102100024_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -247,10 +247,8 @@ namespace user_service.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("UserId1")
+                    b.Property<string>("UserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("VehicleNumber")
@@ -262,7 +260,7 @@ namespace user_service.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId1");
+                    b.HasIndex("UserId");
 
                     b.ToTable("DriverRegisters");
                 });
@@ -322,7 +320,9 @@ namespace user_service.Migrations
                 {
                     b.HasOne("user_service.Entities.ApplicationUser", "User")
                         .WithMany("DriverRegisters")
-                        .HasForeignKey("UserId1");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

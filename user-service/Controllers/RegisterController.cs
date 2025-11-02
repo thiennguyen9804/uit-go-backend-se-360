@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/user/driver-register")]
 public class RegisterController : BaseController
 {
     private readonly IDriverRegisterService _driverRegisterService;
