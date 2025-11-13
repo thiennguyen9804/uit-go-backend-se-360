@@ -1,4 +1,4 @@
-package com.example.microservices;
+package com.example.trip_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

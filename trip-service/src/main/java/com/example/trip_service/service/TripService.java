@@ -129,7 +129,6 @@ public class TripService {
       );
       
       return trip.toDto();
-
     } finally {
       // 6. Xóa lock nếu là owner
       if (acquired) {

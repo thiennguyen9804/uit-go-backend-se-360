@@ -23,6 +23,15 @@ spring:
             - Path=/api/notifications/**
 server:
   port: 9000
+  
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
 # spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8181/realms/spring-microservices-security-realm
 # springdoc.swagger-ui.path=swagger-ui.html
 # springdoc.api-docs.path=./api-docs

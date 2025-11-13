@@ -30,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 class MatchingService {
   private static final Logger logger = LoggerFactory.getLogger(MatchingService.class);
   private final NotificationGrpcClient notificationClient;
-  private final RedisTemplate<String, String> redisTemplate;
   private final GeoOperations<String, String> geoOps;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -66,10 +65,6 @@ class MatchingService {
           String driverIdStr = result.getContent().getName();
           Long driverId = Long.valueOf(driverIdStr);
           return driverId;
-        })
-        .filter(driverId -> {
-          String status = redisTemplate.opsForValue().get("driver:status:" + driverId);
-          return status == null || "IDLE".equals(status);
         })
         .limit(limit)
         .collect(Collectors.toList());
