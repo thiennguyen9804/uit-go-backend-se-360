@@ -23,7 +23,7 @@ public class DeviceToken {
   private Long id;
 
   @Column(name = "user_id")
-  private Long userId;
+  private String userId;
 
   @Column(name = "fcm_token")
   private String fcmToken;

@@ -41,12 +41,12 @@ public class TripController {
   }
 
   @PostMapping("/{id}/cancel")
-  public ResponseEntity<TripDto> cancelTrip(@PathVariable Long id, Long userId) {
+  public ResponseEntity<TripDto> cancelTrip(@PathVariable Long id, String userId) {
     return ResponseEntity.ok(tripService.cancelTrip(id, userId));
   }
 
   @PutMapping("/{id}/accept")
-  public ResponseEntity<TripDto> acceptTrip(@PathVariable Long id, Long driverId) {
+  public ResponseEntity<TripDto> acceptTrip(@PathVariable Long id, String driverId) {
     return ResponseEntity.ok(tripService.acceptTrip(id, driverId));
   }
 }

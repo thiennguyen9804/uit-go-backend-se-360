@@ -17,10 +17,10 @@ public class TripEntity {
   private Long id;
 
   @Column(name = "rider_id")
-  private Long riderId;
+  private String riderId;
 
   @Column(name = "driver_id")
-  private Long driverId;
+  private String driverId;
 
   @Column(name = "source_lat", nullable = false, precision = 9)
   private double sourceLat;

@@ -129,8 +129,7 @@ services:
       - "9092:9092"
       - "29092:29092"
     depends_on:
-      zookeeper:
-        condition: service_healthy
+      - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
@@ -148,19 +147,18 @@ services:
     hostname: schema-registry
     container_name: schema-registry
     depends_on:
-      broker:
-        condition: service_healthy
+      - broker
     ports:
       - "8185:8185"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "broker:29092"
       SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8185
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://schema-registry:8185/subjects"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://schema-registry:8185/subjects"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -174,11 +172,11 @@ services:
     volumes:
       - sqlserver-data:/var/opt/mssql
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourStrong@Passw0rd", "-Q", "SELECT 1", "-C"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # healthcheck:
+    #   test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourStrong@Passw0rd", "-Q", "SELECT 1", "-C"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
 
 volumes:
   sqlserver-data:

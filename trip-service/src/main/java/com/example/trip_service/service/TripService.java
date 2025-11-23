@@ -91,11 +91,11 @@ public class TripService {
     return tripRepository.findById(id).get().toDto();
   }
 
-  public TripDto cancelTrip(Long id, Long userId) {
-    return new TripDto(userId, userId, userId, 0, 0, 0, 0, null, null, null, null);
+  public TripDto cancelTrip(Long id, String userId) {
+    return new TripDto(id, userId, userId, 0, 0, 0, 0, null, null, null, null);
   }
 
-  public TripDto acceptTrip(Long tripId, Long driverId) {
+  public TripDto acceptTrip(Long tripId, String driverId) {
     String lockKey = "trip:lock:" + tripId;
     String lockValue = UUID.randomUUID().toString(); // Giá trị độc nhất
     boolean acquired = false;

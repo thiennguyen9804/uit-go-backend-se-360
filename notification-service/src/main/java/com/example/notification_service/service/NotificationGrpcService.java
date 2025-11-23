@@ -19,7 +19,7 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
   @Override
   public void sendNotification(SendNotificationRequest request,
       StreamObserver<SendNotificationResponse> responseObserver) {
-    Long driverId = request.getDriverId();
+    String driverId = request.getDriverId();
     String fcmToken = deviceTokenRepository.findByUserId(driverId)
         .get()
         .getFcmToken();
@@ -52,9 +52,9 @@ public class NotificationGrpcService extends NotificationServiceGrpc.Notificatio
           .setSuccess(false)
           .setMessage("Failed to send notification: " + e.getMessage())
           .build());
-      if (e.getMessage().contains("NotRegistered")) {
-        deviceTokenRepository.deleteById(driverId);
-      }
+      // if (e.getMessage().contains("NotRegistered")) {
+      //   deviceTokenRepository.deleteById(driverId);
+      // }
     }
     responseObserver.onCompleted();
   }
