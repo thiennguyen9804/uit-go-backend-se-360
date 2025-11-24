@@ -9,7 +9,7 @@ service NotificationService {
 }
 
 message SendNotificationRequest {
-  int64 userId = 1;
+  string userId = 1;
   string title = 2;
   string body = 3;
 }

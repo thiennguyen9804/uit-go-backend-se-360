@@ -29,7 +29,7 @@ public class NotificationGrpcClient {
         this.blockingStub = NotificationServiceGrpc.newBlockingStub(channel);
     }
 
-    public boolean sendNotification(Long userId, String title, String body) {
+    public boolean sendNotification(String userId, String title, String body) {
         SendNotificationRequest request = SendNotificationRequest.newBuilder()
                 .setUserId(userId)
                 .setTitle(title)

@@ -29,7 +29,7 @@ public class NotificationGrpcClient {
     this.blockingStub = NotificationServiceGrpc.newBlockingStub(channel);
   }
 
-  public boolean sendNotification(Long driverId, String title, String body) {
+  public boolean sendNotification(String driverId, String title, String body) {
     SendNotificationRequest request = SendNotificationRequest.newBuilder()
         .setDriverId(driverId)
         .setTitle(title)

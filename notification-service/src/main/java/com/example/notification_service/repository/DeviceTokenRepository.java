@@ -6,5 +6,5 @@ import com.example.notification_service.entity.DeviceToken;
 import com.google.common.base.Optional;
 
 public interface DeviceTokenRepository extends JpaRepository<DeviceToken, Long> {
-    Optional<DeviceToken> findByUserId(Long userId);
+    Optional<DeviceToken> findByUserId(String userId);
 }

@@ -7,8 +7,8 @@ import com.example.trip_service.entity.TripEntity.TripStatus;
 
 public record TripDto(
     Long id,
-    Long riderId,
-    Long driverId,
+    String riderId,
+    String driverId,
     double sourceLat,
     double sourceLng,
     double destLat,
