@@ -46,11 +46,13 @@ services:
     container_name: driver-service
     ports:
       - "8082:8082"
-      - "8386:8386"  # gRPC
+      - "28082:28082"  # gRPC
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - sqlserver
+      - redis
+
 
   matching-service:
     build:
@@ -78,6 +80,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:8080
+    depends_on:
+      - sqlserver
       
   notification-service:
     build:
