@@ -12,3 +12,11 @@
 /user-service/proto-contracts/
 /driver-service/proto-contracts/
 
+# Terraform
+azure-infra/.terraform/
+azure-infra/*.tfstate
+azure-infra/*.tfstate.*
+azure-infra/.terraform.lock.hcl
+azure-infra/*.tfvars
+azure-infra/*.tfvars.json
+
