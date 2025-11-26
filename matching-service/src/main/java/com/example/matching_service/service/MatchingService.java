@@ -11,6 +11,7 @@ import org.springframework.data.geo.GeoResults;
 import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.GeoLocation;
+import org.springframework.data.redis.connection.RedisGeoCommands.GeoRadiusCommandArgs;
 import org.springframework.data.redis.core.GeoOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -32,19 +33,20 @@ class MatchingService {
   private static final Logger logger = LoggerFactory.getLogger(MatchingService.class);
   private final NotificationGrpcClient notificationClient;
   private final GeoOperations<String, String> geoOps;
+  private final RedisTemplate<String, String> redisTemplate;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @KafkaListener(topics = "trip-events")
   @Async("threadPoolTaskExecutor")
   public void listenForTripEvent(TripEvent tripEvent) throws JsonMappingException, JsonProcessingException {
     logger.info("MatchingService received trip events");
-    TripLocationData data = objectMapper.readValue(tripEvent.getData(), TripLocationData.class);
-    logger.info("TripLocationData: {}", data.toString());
+    TripLocationData tripData = objectMapper.readValue(tripEvent.getData(), TripLocationData.class);
+    // logger.info("TripLocationData: {}", data.toString());
     List<String> driverIdList = findNearbyAvailableDrivers(
-        data.sourceLat(),
-        data.sourceLng(), 
+        tripData.sourceLat(),
+        tripData.sourceLng(),
         5,
-        10);
+        10.0d);
 
     if(driverIdList.isEmpty()) {
       logger.info("No driver is free right now");
@@ -74,16 +76,21 @@ class MatchingService {
         new Point(lng, lat),
         new Distance(radiusKm, Metrics.KILOMETERS)
     );
+    GeoRadiusCommandArgs args = GeoRadiusCommandArgs
+      .newGeoRadiusArgs()
+      .sortAscending()
+      .limit(5);
 
-    GeoResults<GeoLocation<String>> results = geoOps.radius("drivers:geo:free", circle);
+    GeoResults<GeoLocation<String>> results = geoOps.radius("drivers:geo:free", circle, args);
     
-    return results.getContent().stream()
+    var driverIdList =  results.getContent().stream()
         .map(result -> {
           String driverIdStr = result.getContent().getName();
           return driverIdStr;
         })
-        .limit(limit)
         .collect(Collectors.toList());
+
+    return driverIdList;
   }
 
 }

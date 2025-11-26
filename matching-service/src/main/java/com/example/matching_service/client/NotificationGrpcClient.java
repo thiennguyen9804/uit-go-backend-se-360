@@ -3,10 +3,7 @@ package com.example.matching_service.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import com.example.notification_service.proto.NotificationServiceGrpc;
-import com.example.notification_service.proto.SendNotificationRequest;
-import com.example.notification_service.proto.SendNotificationResponse;
+import com.example.notification_service.proto.*;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
