@@ -33,10 +33,9 @@ class MatchingService {
   private static final Logger logger = LoggerFactory.getLogger(MatchingService.class);
   private final NotificationGrpcClient notificationClient;
   private final GeoOperations<String, String> geoOps;
-  private final RedisTemplate<String, String> redisTemplate;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
-  @KafkaListener(topics = "trip-events")
+  @KafkaListener(topics = "trip-created-events")
   @Async("threadPoolTaskExecutor")
   public void listenForTripEvent(TripEvent tripEvent) throws JsonMappingException, JsonProcessingException {
     logger.info("MatchingService received trip events");

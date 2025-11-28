@@ -46,6 +46,18 @@ public class TripEntity {
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
+  @Column(name = "accepted_at")
+  private LocalDateTime acceptedAt; // Driver bấm nhận
+
+  @Column(name = "started_at")
+  private LocalDateTime startedAt; // Driver bấm "Bắt đầu chuyến"
+
+  @Column(name = "completed_at")
+  private LocalDateTime completedAt; // Hoàn thành
+
+  @Column(name = "cancelled_at")
+  private LocalDateTime cancelledAt; // Bị hủy
+
   @UpdateTimestamp
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;

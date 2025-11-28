@@ -19,12 +19,6 @@ import com.example.trip_service.service.TripService;
 public class TripController {
   private final TripService tripService;
 
-  @GetMapping("/hello")
-  @ResponseStatus(code = HttpStatus.ACCEPTED)
-  public String sayHello() {
-    return "Hello from Trip Service!!!";
-  }
-
   @GetMapping("/fare")
   public ResponseEntity<FareResponse> calculateFare(@ModelAttribute FareRequest request) {
     return ResponseEntity.ok(tripService.calculateFare(request));
