@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.trip_service.dto.CreateTripRequest;
+import com.example.trip_service.dto.DriverAcceptRequest;
 import com.example.trip_service.dto.FareRequest;
 import com.example.trip_service.dto.FareResponse;
 import com.example.trip_service.dto.TripDto;
@@ -40,7 +41,10 @@ public class TripController {
   }
 
   @PutMapping("/{id}/accept")
-  public ResponseEntity<TripDto> acceptTrip(@PathVariable Long id, String driverId) {
+  public ResponseEntity<TripDto> acceptTrip(@PathVariable Long id, @RequestBody DriverAcceptRequest request)  {
+    var driverId = request.driverId();
     return ResponseEntity.ok(tripService.acceptTrip(id, driverId));
   }
 }
+
+

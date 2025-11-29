@@ -180,6 +180,7 @@ services:
     #   test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourStrong@Passw0rd", "-Q", "SELECT 1", "-C"]
     #   interval: 10s
     #   timeout: 5s
+    
     #   retries: 5
 
 volumes:

@@ -27,6 +27,7 @@ import com.example.trip_service.entity.TripEntity;
 import com.example.trip_service.entity.TripEventEntity;
 import com.example.trip_service.entity.TripEntity.TripStatus;
 import com.example.trip_service.exception.TripAlreadyTakenException;
+import com.example.trip_service.exception.TripNotFoundException;
 import com.example.trip_service.mapper.TripExtension;
 import com.example.trip_service.repository.TripEventRepository;
 import com.example.trip_service.repository.TripRepository;
@@ -150,13 +151,15 @@ public class TripService {
       // 2. Kiểm tra Redis
       List<Point> posList = geoOps.position("drivers:geo:free", driverIdStr);
       var pos = posList.getFirst();
+      log.info("driver position = {}", pos);
 
       // 3. Chuyển GeoSet
       geoOps.remove("drivers:geo:free", driverIdStr);
       geoOps.add("drivers:geo:intrip", new Point(pos.getX(), pos.getY()), driverIdStr);
 
       // 4. Cập nhật DB
-      TripEntity trip = tripRepository.findById(tripId).get();
+      TripEntity trip = tripRepository.findById(tripId)
+          .orElseThrow(() -> new TripNotFoundException("Trip not found: " + tripId));
       trip.setDriverId(driverId);
       trip.setStatus(TripStatus.ACCEPTED);
       tripRepository.save(trip);
