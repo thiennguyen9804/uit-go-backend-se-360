@@ -1,0 +1,138 @@
+on:
+  workflow_call:
+    inputs:
+      service_path:
+        required: true
+        type: string
+      image_name:
+        required: true
+        type: string
+      terraform_dir:
+        required: false
+        type: string
+        default: 'modules/self_service/examples'
+      aca_subnet_id:
+        required: false
+        type: string
+        default: ''
+      service_key:
+        required: true
+        type: string
+      service_port:
+        required: false
+        type: number
+        default: 80
+      external:
+        required: false
+        type: boolean
+        default: true
+      run_tests:
+        required: false
+        type: boolean
+        default: true
+      language:
+        required: false
+        type: string
+        default: ''
+      test_cmd:
+        required: false
+        type: string
+        default: ''
+      build_cmd:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      AZURE_CREDENTIALS:
+        required: true
+      ACR_NAME:
+        required: true
+
+jobs:
+  build-and-test-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.set-image.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup language tooling (optional)
+        run: |
+          if [ "${{ inputs.language }}" = "dotnet" ]; then
+            echo "Setting up dotnet"
+            sudo snap install dotnet-sdk --classic || true
+          fi
+
+      - name: Run tests (optional)
+        if: ${{ inputs.run_tests == true }}
+        run: |
+          if [ -n "${{ inputs.test_cmd }}" ]; then
+            (cd "${{ inputs.service_path }}" && bash -lc "${{ inputs.test_cmd }}")
+          else
+            case "${{ inputs.language }}" in
+              dotnet)
+                (cd "${{ inputs.service_path }}" && dotnet test) ;;
+              maven)
+                (cd "${{ inputs.service_path }}" && mvn -B -ntp test) ;;
+              *)
+                echo "No tests configured or unknown language; skipping tests" ;;
+            esac
+          fi
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Set image name
+        id: set-image
+        run: |
+          IMAGE="${{ secrets.ACR_NAME }}.azurecr.io/${{ inputs.image_name }}"
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Build and push image
+        run: |
+          IMAGE=${{ steps.set-image.outputs.image }}
+          docker build -t "$IMAGE" "${{ inputs.service_path }}"
+          docker push "$IMAGE"
+
+  terraform-deploy:
+    needs: build-and-test-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform init
+        working-directory: ${{ inputs.terraform_dir }}
+        run: terraform init -input=false
+
+      - name: Terraform plan
+        working-directory: ${{ inputs.terraform_dir }}
+        run: |
+          terraform plan -input=false \
+            -var="service_key=${{ inputs.service_key }}" \
+            -var="aca_subnet_id=${{ inputs.aca_subnet_id }}" \
+            -var="service_port=${{ inputs.service_port }}" \
+            -var="external=${{ inputs.external }}" \
+            -var="image=${{ needs.build-and-test-and-push.outputs.image }}"
+
+      - name: Terraform apply
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
+        working-directory: ${{ inputs.terraform_dir }}
+        run: |
+          terraform apply -input=false -auto-approve \
+            -var="service_key=${{ inputs.service_key }}" \
+            -var="aca_subnet_id=${{ inputs.aca_subnet_id }}" \
+            -var="service_port=${{ inputs.service_port }}" \
+            -var="external=${{ inputs.external }}" \
+            -var="image=${{ needs.build-and-test-and-push.outputs.image }}"

@@ -1,0 +1,306 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+          - main        # dev
+          - production  # prod
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      service_path:
+        description: 'Path to the service folder containing the Dockerfile (relative to repo root)'
+        required: false
+        default: 'driver-service'
+      image_name:
+        description: 'Image name to push (e.g. driver-service:latest)'
+        required: false
+        default: 'driver-service:latest'
+      terraform_dir:
+        description: 'Path to terraform root that deploys the service'
+        required: false
+        default: 'modules/self_service/examples'
+      aca_subnet_id:
+        description: 'Subnet id for Container Apps environment (required for module)'
+        required: false
+        default: ''
+      service_key:
+        description: 'Service key/name used by the service_container module (e.g. driver-service)'
+        required: false
+        default: 'driver-service'
+      service_port:
+        description: 'Port the service listens on'
+        required: false
+        default: '80'
+      external:
+        description: 'Whether the service should be externally reachable (true|false)'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_VERSION: "8.0.x"
+      JAVA_VERSION: "21"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore .NET dependencies
+        run: dotnet restore uit-go-backend.sln
+
+      - name: Build .NET solution
+        run: dotnet build uit-go-backend.sln --configuration Release --no-restore
+
+      - name: Test .NET solution
+        run: dotnet test uit-go-backend.sln --configuration Release --no-build --logger trx
+
+      - name: Setup Temurin JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Cache Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-${{ runner.os }}-
+
+      - name: Test Java services
+        run: |
+          set -euo pipefail
+          for service in trip-service notification-service matching-service api-gateway; do
+            echo "Running tests for $service"
+            (cd "$service" && mvn -B -ntp clean test)
+          done
+
+  docker-publish:
+    name: Build & Push Docker Images
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: false # disabled in favor of per-service reusable workflow jobs
+    env:
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Docker login to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build & push images
+        run: |
+          chmod +x build-and-push.sh
+          ./build-and-push.sh
+
+  push-driver-service:
+    name: Push driver-service (uses reusable)
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/reusable/self-service.yml
+    with:
+      service_path: 'driver-service'
+      image_name: 'driver-service:latest'
+      service_key: 'driver-service'
+      skip_terraform: true
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+
+  push-user-service:
+    name: Push user-service (uses reusable)
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/reusable/self-service.yml
+    with:
+      service_path: 'user-service'
+      image_name: 'user-service:latest'
+      service_key: 'user-service'
+      skip_terraform: true
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+
+  push-trip-service:
+    name: Push trip-service (uses reusable)
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/reusable/self-service.yml
+    with:
+      service_path: 'trip-service'
+      image_name: 'trip-service:latest'
+      service_key: 'trip-service'
+      skip_terraform: true
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+
+  push-notification-service:
+    name: Push notification-service (uses reusable)
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/reusable/self-service.yml
+    with:
+      service_path: 'notification-service'
+      image_name: 'notification-service:latest'
+      service_key: 'notification-service'
+      skip_terraform: true
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+
+  push-matching-service:
+    name: Push matching-service (uses reusable)
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/reusable/self-service.yml
+    with:
+      service_path: 'matching-service'
+      image_name: 'matching-service:latest'
+      service_key: 'matching-service'
+      skip_terraform: true
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+
+  push-api-gateway:
+    name: Push api-gateway (uses reusable)
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/reusable/self-service.yml
+    with:
+      service_path: 'api-gateway'
+      image_name: 'api-gateway:latest'
+      service_key: 'api-gateway'
+      skip_terraform: true
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+
+  terraform-deploy:
+    name: Terraform Deploy
+    needs: docker-publish
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: terraform-deploy
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: azure-infra
+    env:
+      ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+      ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
+      ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+      ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+      TF_STATE_RESOURCE_GROUP: ${{ secrets.TF_STATE_RESOURCE_GROUP }}
+      TF_STATE_STORAGE_ACCOUNT: ${{ secrets.TF_STATE_STORAGE_ACCOUNT }}
+      TF_STATE_CONTAINER: ${{ secrets.TF_STATE_CONTAINER }}
+      TF_STATE_KEY: ${{ secrets.TF_STATE_KEY }}
+      TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('azure-infra/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-
+
+      - name: Verify backend configuration
+        run: |
+          missing=0
+          for var in TF_STATE_RESOURCE_GROUP TF_STATE_STORAGE_ACCOUNT TF_STATE_CONTAINER TF_STATE_KEY; do
+            if [ -z "${!var}" ]; then
+              echo "::error ::Environment variable $var is required for Terraform remote state."
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 1 ]; then
+            exit 1
+          fi
+
+      - name: Terraform Format
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${TF_STATE_RESOURCE_GROUP}" \
+            -backend-config="storage_account_name=${TF_STATE_STORAGE_ACCOUNT}" \
+            -backend-config="container_name=${TF_STATE_CONTAINER}" \
+            -backend-config="key=${TF_STATE_KEY}"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: azure-infra/tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+  self-service-deploy:
+    name: Self-Service Deploy (manual)
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/reusable/self-service.yml
+    with:
+      service_path: ${{ github.event.inputs.service_path }}
+      image_name: ${{ github.event.inputs.image_name }}
+      terraform_dir: ${{ github.event.inputs.terraform_dir }}
+      aca_subnet_id: ${{ github.event.inputs.aca_subnet_id }}
+      service_key: ${{ github.event.inputs.service_key }}
+      service_port: ${{ github.event.inputs.service_port }}
+      external: ${{ github.event.inputs.external }}
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+
