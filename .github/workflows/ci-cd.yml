@@ -122,11 +122,14 @@ jobs:
           chmod +x build-and-push.sh
           ./build-and-push.sh
 
+
+  # ================================
+  # PUSH IMAGES (DEV ONLY)
+  # ================================
   push-driver-service:
-    name: Push driver-service (uses reusable)
     needs: build-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/reusable/self-service.yml
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/self-service.yml
     with:
       service_path: 'driver-service'
       image_name: 'driver-service:latest'
@@ -137,10 +140,9 @@ jobs:
       ACR_NAME: ${{ secrets.ACR_NAME }}
 
   push-user-service:
-    name: Push user-service (uses reusable)
     needs: build-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/reusable/self-service.yml
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/self-service.yml
     with:
       service_path: 'user-service'
       image_name: 'user-service:latest'
@@ -151,10 +153,9 @@ jobs:
       ACR_NAME: ${{ secrets.ACR_NAME }}
 
   push-trip-service:
-    name: Push trip-service (uses reusable)
     needs: build-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/reusable/self-service.yml
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/self-service.yml
     with:
       service_path: 'trip-service'
       image_name: 'trip-service:latest'
@@ -163,49 +164,10 @@ jobs:
     secrets:
       AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       ACR_NAME: ${{ secrets.ACR_NAME }}
-
-  push-notification-service:
-    name: Push notification-service (uses reusable)
-    needs: build-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/reusable/self-service.yml
-    with:
-      service_path: 'notification-service'
-      image_name: 'notification-service:latest'
-      service_key: 'notification-service'
-      skip_terraform: true
-    secrets:
-      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-      ACR_NAME: ${{ secrets.ACR_NAME }}
-
-  push-matching-service:
-    name: Push matching-service (uses reusable)
-    needs: build-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/reusable/self-service.yml
-    with:
-      service_path: 'matching-service'
-      image_name: 'matching-service:latest'
-      service_key: 'matching-service'
-      skip_terraform: true
-    secrets:
-      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-      ACR_NAME: ${{ secrets.ACR_NAME }}
-
-  push-api-gateway:
-    name: Push api-gateway (uses reusable)
-    needs: build-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/reusable/self-service.yml
-    with:
-      service_path: 'api-gateway'
-      image_name: 'api-gateway:latest'
-      service_key: 'api-gateway'
-      skip_terraform: true
-    secrets:
-      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-      ACR_NAME: ${{ secrets.ACR_NAME }}
-
+ 
+  # ================================
+  # PRODUCTION DEPLOY
+  # ================================     
   terraform-deploy:
     name: Terraform Deploy
     needs: docker-publish
@@ -216,7 +178,7 @@ jobs:
       cancel-in-progress: false
     defaults:
       run:
-        working-directory: azure-infra
+        working-directory: provision/complete_demo
     env:
       ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
       ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
@@ -291,7 +253,7 @@ jobs:
   self-service-deploy:
     name: Self-Service Deploy (manual)
     if: github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/reusable/self-service.yml
+    uses: ./.github/workflows/self-service.yml
     with:
       service_path: ${{ github.event.inputs.service_path }}
       image_name: ${{ github.event.inputs.image_name }}
