@@ -9,6 +9,7 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.GeoOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisConfig {
@@ -18,22 +19,28 @@ public class RedisConfig {
   @Value("${redis.port}")
   private int redisPort;
 
-    @Bean
-    LettuceConnectionFactory redisConnectionFactory() {
-      return new LettuceConnectionFactory(new RedisStandaloneConfiguration(redisHost, redisPort));
-    }
+  @Bean
+  LettuceConnectionFactory redisConnectionFactory() {
+    return new LettuceConnectionFactory(new RedisStandaloneConfiguration(redisHost, redisPort));
+  }
 
-    @Bean
-    @Primary
-    RedisTemplate<String, String> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-      RedisTemplate<String, String> template = new RedisTemplate<>();
-      template.setConnectionFactory(redisConnectionFactory);
-      return template;
-    }
+  @Bean
+  @Primary
+  RedisTemplate<String, String> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+    RedisTemplate<String, String> template = new RedisTemplate<>();
+    StringRedisSerializer stringSerializer = new StringRedisSerializer();
 
-    @Bean
-    GeoOperations<String, String> geoOperations(RedisTemplate<String, String> redisTemplate) {
-        return redisTemplate.opsForGeo();
-    }
+    template.setKeySerializer(stringSerializer);
+    template.setValueSerializer(stringSerializer);
+    template.setHashKeySerializer(stringSerializer);
+    template.setHashValueSerializer(stringSerializer);
+    template.setConnectionFactory(redisConnectionFactory);
+    return template;
+  }
+
+  @Bean
+  GeoOperations<String, String> geoOperations(RedisTemplate<String, String> redisTemplate) {
+    return redisTemplate.opsForGeo();
+  }
 
 }

@@ -1,28 +1,13 @@
-# Stage 1: Build the application using Maven and Java 21
-FROM maven:3.9.8-eclipse-temurin-21 AS builder
-
+# Stage 2: Build
+FROM maven:3.9.8-eclipse-temurin-21 as build
 WORKDIR /app
-
-# Copy pom.xml and download dependencies
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
-
-# Copy source code and build
 COPY src ./src
-RUN mvn clean generate-sources package -DskipTests
+RUN mvn clean package -DskipTests
 
-# Stage 2: Run the built JAR using minimal base image
-FROM eclipse-temurin:21-jre-alpine
-
+# Stage 3: Production
+FROM eclipse-temurin:21-jre-alpine as production
 WORKDIR /app
-
-
-# Copy the built JAR
-COPY --from=builder /app/target/matching-service-0.0.1-SNAPSHOT.jar app.jar
-
-# Expose port
+COPY --from=build /app/target/matching-service-0.0.1-SNAPSHOT.jar /app/app.jar
 EXPOSE 8083
-
-
-# Start Spring Boot app with production profile
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "app.jar"]

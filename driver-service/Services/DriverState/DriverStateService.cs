@@ -25,7 +25,7 @@ public class DriverStateService : IDriverStateService
 
         if (enabled)
         {
-            // turning on: require that latest event is Off (strict). If latest is not Off, throw.
+            // turning on: require that latest event is Off (strict). If latest is not Off, throw. 
             var latestCheck = await _eventRepo.GetLatestByDriverIdAsync(driverGuid);
             if (latestCheck != null && latestCheck.WorkStatus != WorkStatus.Off)
             {

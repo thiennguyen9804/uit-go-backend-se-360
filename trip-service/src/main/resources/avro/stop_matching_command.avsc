@@ -1,0 +1,11 @@
+{
+    "type": "record",
+    "name": "StopMatchingCommand",
+    "namespace": "com.example.trip_service.dto",
+    "fields": [
+        {
+            "name": "tripId",
+            "type": "long"
+        }
+    ]
+}

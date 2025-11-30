@@ -19,8 +19,6 @@ public class NotificationService {
     DeviceToken deviceToken = new DeviceToken();
     deviceToken.setUserId(userId);
     deviceToken.setFcmToken(fcmToken);
-
-
     deviceTokenRepository.save(deviceToken);
   }
 
