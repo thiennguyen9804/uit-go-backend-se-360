@@ -13,10 +13,15 @@
 /driver-service/proto-contracts/
 
 # Terraform
+terraform.tfstate
+terraform.tfstate.*
 azure-infra/.terraform/
 azure-infra/*.tfstate
 azure-infra/*.tfstate.*
 azure-infra/.terraform.lock.hcl
 azure-infra/*.tfvars
 azure-infra/*.tfvars.json
+modules/self_service/examples/tfvars.auto.tfvars
+provision/complete_demo/.terraform.lock.hcl
+provision/complete_demo/.terraform/
 

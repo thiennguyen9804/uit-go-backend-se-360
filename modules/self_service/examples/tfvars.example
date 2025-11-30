@@ -1,0 +1,24 @@
+# Example tfvars for modules/self_service/examples
+# Copy to tfvars.auto.tfvars or use -var-file when running terraform
+
+resource_group_name = "rg-self-service-example"
+location            = "eastus"
+container_group_name = "example-cg"
+container_name       = "example-container"
+
+# Required: subnet id for Container Apps environment
+aca_subnet_id = "<REPLACE_WITH_YOUR_SUBNET_ID>"
+
+# Service specific
+service_key = "driver-service"
+service_port = 80
+external = true
+
+# Optional: image if you want to override the default ACR resolution
+# image = "myregistry.azurecr.io/driver-service:latest"
+
+# Optional: tags
+tags = {
+  project = "uit-go-backend"
+  owner   = "team"
+}

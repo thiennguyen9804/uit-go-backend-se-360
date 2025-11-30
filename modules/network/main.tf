@@ -1,0 +1,35 @@
+resource "azurerm_virtual_network" "main" {
+	name                = "vnet-${var.resource_group_name}"
+	resource_group_name = var.resource_group_name
+	location            = var.location
+	address_space       = var.vnet_address_space
+	tags                = var.tags
+}
+
+resource "azurerm_subnet" "aca" {
+	name                 = "snet-aca"
+	resource_group_name  = var.resource_group_name
+	virtual_network_name = azurerm_virtual_network.main.name
+	address_prefixes     = var.aca_subnet_address_space
+	delegation {
+		name = "containerapps_delegation"
+
+		service_delegation {
+			name = "Microsoft.App/environments"
+			actions = [
+				"Microsoft.Network/virtualNetworks/subnets/action",
+			]
+		}
+	}
+	depends_on = [azurerm_virtual_network.main]
+
+}
+
+resource "azurerm_subnet" "db" {
+	name                 = "snet-db-pe"
+	resource_group_name  = var.resource_group_name
+	virtual_network_name = azurerm_virtual_network.main.name
+	address_prefixes     = var.db_subnet_address_space
+	depends_on = [azurerm_virtual_network.main]
+
+}
