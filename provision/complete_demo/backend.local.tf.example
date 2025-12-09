@@ -1,0 +1,13 @@
+# Example backend configuration for local development
+# Copy this file to backend.local.tf and fill in your values
+# Or use terraform init with -backend-config flags
+
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "rg-terraform-state"
+    storage_account_name = "stterraformstate"
+    container_name       = "tfstate"
+    key                  = "complete-demo.terraform.tfstate"
+  }
+}
+
