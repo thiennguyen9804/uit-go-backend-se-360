@@ -3,37 +3,18 @@ name: CI/CD
 on:
   push:
     branches:
-          - production  # prod
+      - production  # Infrastructure deployment on production branch
+    paths:
+      # Infrastructure and Terraform changes
+      - 'provision/**'
+      - 'modules/**'
+      - '.github/workflows/ci-cd.yml'
+      # Build/test triggers (for entire solution)
+      - '**/pom.xml'
+      - '**/*.csproj'
+      - 'uit-go-backend.sln'
   workflow_dispatch:
-    inputs:
-      service_path:
-        description: 'Path to the service folder containing the Dockerfile (relative to repo root)'
-        required: false
-        default: 'driver-service'
-      image_name:
-        description: 'Image name to push (e.g. driver-service:latest)'
-        required: false
-        default: 'driver-service:latest'
-      terraform_dir:
-        description: 'Path to terraform root that deploys the service'
-        required: false
-        default: 'modules/self_service/examples'
-      aca_subnet_id:
-        description: 'Subnet id for Container Apps environment (required for module)'
-        required: false
-        default: ''
-      service_key:
-        description: 'Service key/name used by the service_container module (e.g. driver-service)'
-        required: false
-        default: 'driver-service'
-      service_port:
-        description: 'Port the service listens on'
-        required: false
-        default: '80'
-      external:
-        description: 'Whether the service should be externally reachable (true|false)'
-        required: false
-        default: 'true'
+    # Manual trigger for infrastructure deployment
 
 permissions:
   contents: read
@@ -94,79 +75,12 @@ jobs:
             (cd "$service" && mvn -B -ntp clean test)
           done
 
-  docker-publish:
-    name: Build & Push Docker Images
-    needs: build-test
-    runs-on: ubuntu-latest
-    if: false # disabled in favor of per-service reusable workflow jobs
-    env:
-      ACR_NAME: ${{ secrets.ACR_NAME }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Docker login to ACR
-        run: az acr login --name ${{ env.ACR_NAME }}
-
-      - name: Build & push images
-        run: |
-          chmod +x build-and-push.sh
-          ./build-and-push.sh
-
-
   # ================================
-  # PUSH IMAGES (DEV ONLY)
-  # ================================
-  push-driver-service:
-    needs: build-test
-    if: github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/self-service.yml
-    with:
-      service_path: 'driver-service'
-      image_name: 'driver-service:latest'
-      service_key: 'driver-service'
-      skip_terraform: true
-    secrets:
-      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-      ACR_NAME: ${{ secrets.ACR_NAME }}
-
-  push-user-service:
-    needs: build-test
-    if: github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/self-service.yml
-    with:
-      service_path: 'user-service'
-      image_name: 'user-service:latest'
-      service_key: 'user-service'
-      skip_terraform: true
-    secrets:
-      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-      ACR_NAME: ${{ secrets.ACR_NAME }}
-
-  push-trip-service:
-    needs: build-test
-    if: github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/self-service.yml
-    with:
-      service_path: 'trip-service'
-      image_name: 'trip-service:latest'
-      service_key: 'trip-service'
-      skip_terraform: true
-    secrets:
-      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-      ACR_NAME: ${{ secrets.ACR_NAME }}
- 
-  # ================================
-  # PRODUCTION DEPLOY
+  # PRODUCTION INFRASTRUCTURE DEPLOY
   # ================================     
   terraform-deploy:
-    name: Terraform Deploy
-    needs: docker-publish
+    name: Terraform Deploy Infrastructure
+    needs: build-test
     if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
     concurrency:
@@ -203,7 +117,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.terraform.d/plugin-cache
-          key: terraform-${{ runner.os }}-${{ hashFiles('azure-infra/.terraform.lock.hcl') }}
+          key: terraform-${{ runner.os }}-${{ hashFiles('provision/complete_demo/.terraform.lock.hcl') }}
           restore-keys: |
             terraform-${{ runner.os }}-
 
@@ -241,24 +155,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
-          path: azure-infra/tfplan
+          path: provision/complete_demo/tfplan
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
-  self-service-deploy:
-    name: Self-Service Deploy (manual)
-    if: github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/self-service.yml
-    with:
-      service_path: ${{ github.event.inputs.service_path }}
-      image_name: ${{ github.event.inputs.image_name }}
-      terraform_dir: ${{ github.event.inputs.terraform_dir }}
-      aca_subnet_id: ${{ github.event.inputs.aca_subnet_id }}
-      service_key: ${{ github.event.inputs.service_key }}
-      service_port: ${{ github.event.inputs.service_port }}
-      external: ${{ github.event.inputs.external }}
-    secrets:
-      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-      ACR_NAME: ${{ secrets.ACR_NAME }}
+  # Note: Self-service deployment is now handled by deploy-service.yml workflow
+  # This workflow only handles:
+  # - build-test: Build and test entire solution
+  # - terraform-deploy: Deploy infrastructure (provision/complete_demo)
 

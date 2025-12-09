@@ -1,0 +1,50 @@
+# Service Configuration File
+# Đặt file này trong thư mục service của bạn (ví dụ: my-service/service.yml)
+# File này được sử dụng bởi GitHub Actions để tự động deploy service
+
+service:
+  # Basic Information
+  name: "my-service"  # Tên service (phải match với folder name, lowercase, no spaces)
+  display_name: "My Service"  # Tên hiển thị
+  description: "Description of my service"
+  version: "1.0.0"  # Service version
+  
+  # Build Configuration
+  build:
+    language: "maven"  # Options: maven, dotnet, node, python, go
+    dockerfile: "Dockerfile"  # Path to Dockerfile (relative to service root)
+    build_cmd: ""  # Custom build command (optional, auto-detected if empty)
+    test_cmd: ""   # Custom test command (optional, auto-detected if empty)
+    context: "."   # Docker build context (default: service root)
+    
+  # Runtime Configuration
+  runtime:
+    port: 8080  # Port service listens on (required)
+    health_check_path: "/actuator/health"  # Health check endpoint
+    cpu: 0.5  # CPU cores (0.25, 0.5, 1.0, 1.5, 2.0)
+    memory: "1.0Gi"  # Memory (0.5Gi, 1.0Gi, 2.0Gi, 4.0Gi)
+    min_replicas: 0  # Minimum replicas (0 for scale-to-zero, 1+ for always-on)
+    max_replicas: 3  # Maximum replicas
+    
+  # Networking
+  networking:
+    external: false  # Expose publicly (true) or internal only (false)
+    cors_enabled: false  # Enable CORS (for public APIs)
+    
+  # Dependencies
+  dependencies:
+    database: false  # Needs database connection? (SQL Server)
+    kafka: false     # Needs Kafka/Event Hubs?
+    redis: false     # Needs Redis cache?
+    
+  # Environment Variables (optional)
+  env:
+    # CUSTOM_VAR: "value"
+    # ANOTHER_VAR: "another-value"
+    
+  # Resource Tags
+  tags:
+    team: "backend"
+    environment: "dev"
+    managed_by: "self-service-platform"
+

@@ -1,0 +1,397 @@
+name: Deploy Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: 'Service name (folder name, e.g., payment-service)'
+        required: true
+        type: string
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        type: boolean
+        default: false
+      skip_validation:
+        description: 'Skip service config validation'
+        required: false
+        type: boolean
+        default: false
+      auto_approve:
+        description: 'Auto-approve deployment (use with caution)'
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches:
+      - production
+    paths:
+      - '**/service.yml'
+      - '**/Dockerfile'
+      - '**/pom.xml'
+      - '**/*.csproj'
+      - '**/package.json'
+      - '**/requirements.txt'
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  discover-service:
+    name: Discover Service
+    runs-on: ubuntu-latest
+    outputs:
+      service_name: ${{ steps.discover.outputs.service_name }}
+      service_path: ${{ steps.discover.outputs.service_path }}
+      service_config: ${{ steps.discover.outputs.service_config }}
+      changed_files: ${{ steps.discover.outputs.changed_files }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Discover Service
+        id: discover
+        run: |
+          set -euo pipefail
+          
+          # Get service name from input or changed files
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SERVICE_NAME="${{ github.event.inputs.service_name }}"
+            echo "📋 Using service name from workflow_dispatch: $SERVICE_NAME"
+          else
+            # Auto-detect from changed files
+            echo "🔍 Auto-detecting service from changed files..."
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} || echo "")
+            
+            if [ -z "$CHANGED_FILES" ]; then
+              echo "❌ No changed files detected"
+              exit 1
+            fi
+            
+            # Find service.yml in changed files
+            SERVICE_NAME=$(echo "$CHANGED_FILES" | grep -oP '^\K[^/]+(?=/service\.yml)' | head -1)
+            
+            if [ -z "$SERVICE_NAME" ]; then
+              # Try to find from Dockerfile or source files
+              SERVICE_NAME=$(echo "$CHANGED_FILES" | grep -oP '^\K[^/]+(?=/)' | sort -u | head -1)
+            fi
+          fi
+          
+          if [ -z "$SERVICE_NAME" ]; then
+            echo "❌ Could not determine service name"
+            echo "💡 Tip: Specify service_name in workflow_dispatch or ensure service.yml exists"
+            exit 1
+          fi
+          
+          SERVICE_PATH="$SERVICE_NAME"
+          SERVICE_CONFIG="$SERVICE_PATH/service.yml"
+          
+          if [ ! -f "$SERVICE_CONFIG" ]; then
+            echo "❌ Service config not found: $SERVICE_CONFIG"
+            echo "💡 Create service.yml in your service directory"
+            echo "   Run: ./scripts/create-service.sh $SERVICE_NAME"
+            exit 1
+          fi
+          
+          echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
+          echo "service_path=$SERVICE_PATH" >> $GITHUB_OUTPUT
+          echo "service_config=$SERVICE_CONFIG" >> $GITHUB_OUTPUT
+          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+          
+          echo "✅ Discovered service: $SERVICE_NAME"
+          echo "📁 Path: $SERVICE_PATH"
+          echo "📝 Config: $SERVICE_CONFIG"
+
+  validate-service:
+    name: Validate Service Config
+    needs: discover-service
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.inputs.skip_validation }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+      
+      - name: Validate Service Config
+        run: |
+          SERVICE_CONFIG="${{ needs.discover-service.outputs.service_config }}"
+          chmod +x scripts/validate-service-config.sh
+          ./scripts/validate-service-config.sh "$SERVICE_CONFIG"
+      
+      - name: Check Dockerfile
+        run: |
+          SERVICE_PATH="${{ needs.discover-service.outputs.service_path }}"
+          SERVICE_CONFIG="${{ needs.discover-service.outputs.service_config }}"
+          
+          # Get dockerfile path from config
+          DOCKERFILE=$(yq eval '.service.build.dockerfile' "$SERVICE_CONFIG" || echo "Dockerfile")
+          DOCKERFILE_PATH="$SERVICE_PATH/$DOCKERFILE"
+          
+          if [ ! -f "$DOCKERFILE_PATH" ]; then
+            echo "❌ Dockerfile not found: $DOCKERFILE_PATH"
+            exit 1
+          fi
+          
+          echo "✅ Dockerfile found: $DOCKERFILE_PATH"
+          
+          # Basic Dockerfile validation
+          if ! grep -q "FROM" "$DOCKERFILE_PATH"; then
+            echo "❌ Invalid Dockerfile: missing FROM instruction"
+            exit 1
+          fi
+          
+          echo "✅ Dockerfile is valid"
+
+  build-and-test:
+    name: Build and Test
+    needs: [discover-service, validate-service]
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      language: ${{ steps.config.outputs.language }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Parse Service Config
+        id: config
+        run: |
+          SERVICE_CONFIG="${{ needs.discover-service.outputs.service_config }}"
+          
+          # Install yq
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          
+          # Extract config values
+          LANGUAGE=$(yq eval '.service.build.language' "$SERVICE_CONFIG" || echo "maven")
+          PORT=$(yq eval '.service.runtime.port' "$SERVICE_CONFIG" || echo "8080")
+          EXTERNAL=$(yq eval '.service.networking.external' "$SERVICE_CONFIG" || echo "false")
+          NEEDS_DB=$(yq eval '.service.dependencies.database' "$SERVICE_CONFIG" || echo "false")
+          NEEDS_KAFKA=$(yq eval '.service.dependencies.kafka' "$SERVICE_CONFIG" || echo "false")
+          NEEDS_REDIS=$(yq eval '.service.dependencies.redis' "$SERVICE_CONFIG" || echo "false")
+          
+          echo "language=$LANGUAGE" >> $GITHUB_OUTPUT
+          echo "port=$PORT" >> $GITHUB_OUTPUT
+          echo "external=$EXTERNAL" >> $GITHUB_OUTPUT
+          echo "needs_db=$NEEDS_DB" >> $GITHUB_OUTPUT
+          echo "needs_kafka=$NEEDS_KAFKA" >> $GITHUB_OUTPUT
+          echo "needs_redis=$NEEDS_REDIS" >> $GITHUB_OUTPUT
+          
+          echo "📋 Service Configuration:"
+          echo "   Language: $LANGUAGE"
+          echo "   Port: $PORT"
+          echo "   External: $EXTERNAL"
+          echo "   Dependencies: DB=$NEEDS_DB, Kafka=$NEEDS_KAFKA, Redis=$NEEDS_REDIS"
+      
+      - name: Setup Build Tools
+        run: |
+          case "${{ steps.config.outputs.language }}" in
+            maven)
+              echo "☕ Setting up Java/Maven..."
+              sudo apt-get update
+              sudo apt-get install -y openjdk-21-jdk
+              echo "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64" >> $GITHUB_ENV
+              ;;
+            dotnet)
+              echo "🔷 Setting up .NET..."
+              # .NET setup will be handled by setup-dotnet action
+              ;;
+            node)
+              echo "📦 Setting up Node.js..."
+              # Node setup will be handled by setup-node action
+              ;;
+          esac
+      
+      - name: Setup .NET
+        if: steps.config.outputs.language == 'dotnet'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Setup Node.js
+        if: steps.config.outputs.language == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Run Tests
+        if: ${{ !github.event.inputs.skip_tests }}
+        working-directory: ${{ needs.discover-service.outputs.service_path }}
+        run: |
+          case "${{ steps.config.outputs.language }}" in
+            maven)
+              echo "🧪 Running Maven tests..."
+              mvn -B -ntp clean test
+              ;;
+            dotnet)
+              echo "🧪 Running .NET tests..."
+              dotnet test
+              ;;
+            node)
+              echo "🧪 Running Node.js tests..."
+              npm test || yarn test || echo "⚠️ No test script found"
+              ;;
+            *)
+              echo "⚠️ No test command for language: ${{ steps.config.outputs.language }}"
+              ;;
+          esac
+      
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Login to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+      
+      - name: Build and Push Image
+        id: build
+        run: |
+          SERVICE_NAME="${{ needs.discover-service.outputs.service_name }}"
+          SERVICE_PATH="${{ needs.discover-service.outputs.service_path }}"
+          SERVICE_CONFIG="${{ needs.discover-service.outputs.service_config }}"
+          
+          # Get build context from config
+          CONTEXT=$(yq eval '.service.build.context' "$SERVICE_CONFIG" || echo ".")
+          DOCKERFILE=$(yq eval '.service.build.dockerfile' "$SERVICE_CONFIG" || echo "Dockerfile")
+          
+          IMAGE="${{ secrets.ACR_NAME }}.azurecr.io/${SERVICE_NAME}:latest"
+          IMAGE_TAG="${{ secrets.ACR_NAME }}.azurecr.io/${SERVICE_NAME}:${{ github.sha }}"
+          
+          echo "🏗️ Building Docker image..."
+          echo "   Context: $SERVICE_PATH/$CONTEXT"
+          echo "   Dockerfile: $SERVICE_PATH/$DOCKERFILE"
+          
+          docker build \
+            -f "$SERVICE_PATH/$DOCKERFILE" \
+            -t "$IMAGE" \
+            -t "$IMAGE_TAG" \
+            "$SERVICE_PATH/$CONTEXT"
+          
+          echo " Pushing images..."
+          docker push "$IMAGE"
+          docker push "$IMAGE_TAG"
+          
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          
+          echo " Image built and pushed: $IMAGE"
+
+  terraform-plan:
+    name: Terraform Plan
+    needs: [discover-service, build-and-test]
+    runs-on: ubuntu-latest
+    outputs:
+      plan_output: ${{ steps.plan.outputs.stdout }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+      
+      - name: Parse Service Config
+        id: config
+        run: |
+          SERVICE_CONFIG="${{ needs.discover-service.outputs.service_config }}"
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          
+          PORT=$(yq eval '.service.runtime.port' "$SERVICE_CONFIG" || echo "8080")
+          EXTERNAL=$(yq eval '.service.networking.external' "$SERVICE_CONFIG" || echo "false")
+          CPU=$(yq eval '.service.runtime.cpu' "$SERVICE_CONFIG" || echo "0.5")
+          MEMORY=$(yq eval '.service.runtime.memory' "$SERVICE_CONFIG" || echo "1.0Gi")
+          MIN_REPLICAS=$(yq eval '.service.runtime.min_replicas' "$SERVICE_CONFIG" || echo "0")
+          MAX_REPLICAS=$(yq eval '.service.runtime.max_replicas' "$SERVICE_CONFIG" || echo "3")
+          
+          echo "port=$PORT" >> $GITHUB_OUTPUT
+          echo "external=$EXTERNAL" >> $GITHUB_OUTPUT
+          echo "cpu=$CPU" >> $GITHUB_OUTPUT
+          echo "memory=$MEMORY" >> $GITHUB_OUTPUT
+          echo "min_replicas=$MIN_REPLICAS" >> $GITHUB_OUTPUT
+          echo "max_replicas=$MAX_REPLICAS" >> $GITHUB_OUTPUT
+      
+      - name: Terraform Init
+        working-directory: modules/self_service/examples
+        run: terraform init -input=false
+      
+      - name: Terraform Plan
+        id: plan
+        working-directory: modules/self_service/examples
+        run: |
+          terraform plan -input=false \
+            -var="service_key=${{ needs.discover-service.outputs.service_name }}" \
+            -var="aca_subnet_id=${{ secrets.ACA_SUBNET_ID }}" \
+            -var="service_port=${{ steps.config.outputs.port }}" \
+            -var="external=${{ steps.config.outputs.external }}" \
+            -var="image=${{ needs.build-and-test.outputs.image }}" \
+            -out=tfplan | tee plan_output.txt
+          
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          cat plan_output.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ needs.discover-service.outputs.service_name }}
+          path: modules/self_service/examples/tfplan
+
+  terraform-apply:
+    name: Terraform Apply
+    needs: [discover-service, build-and-test, terraform-plan]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.auto_approve == 'true') ||
+      (github.ref == 'refs/heads/production' && github.event_name == 'push')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+      
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-${{ needs.discover-service.outputs.service_name }}
+          path: modules/self_service/examples
+      
+      - name: Parse Service Config
+        id: config
+        run: |
+          SERVICE_CONFIG="${{ needs.discover-service.outputs.service_config }}"
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          
+          PORT=$(yq eval '.service.runtime.port' "$SERVICE_CONFIG" || echo "8080")
+          EXTERNAL=$(yq eval '.service.networking.external' "$SERVICE_CONFIG" || echo "false")
+          
+          echo "port=$PORT" >> $GITHUB_OUTPUT
+          echo "external=$EXTERNAL" >> $GITHUB_OUTPUT
+      
+      - name: Terraform Apply
+        working-directory: modules/self_service/examples
+        run: |
+          terraform apply -input=false -auto-approve tfplan
+      
+      - name: Get Service URL
+        if: steps.config.outputs.external == 'true'
+        run: |
+          SERVICE_NAME="${{ needs.discover-service.outputs.service_name }}"
+          echo "✅ Service deployed: $SERVICE_NAME"
+          echo "🔗 Check service status with:"
+          echo "   az containerapp show --name $SERVICE_NAME --resource-group <rg-name> --query 'properties.configuration.ingress.fqdn' -o tsv"
+

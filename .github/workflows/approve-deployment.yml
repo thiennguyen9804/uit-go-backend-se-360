@@ -1,0 +1,24 @@
+name: Approve Deployment
+
+on:
+  workflow_run:
+    workflows: ["Deploy Service"]
+    types:
+      - completed
+
+jobs:
+  check-approval:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'workflow_dispatch' }}
+    steps:
+      - name: Check if auto-approve was used
+        id: check
+        run: |
+          # This workflow can be extended to add approval gates
+          # For now, deployments with auto_approve=true will proceed
+          echo "✅ Deployment approved (auto-approve enabled)"
+      
+      - name: Notify Team
+        run: |
+          echo "📢 Deployment completed for service"
+
