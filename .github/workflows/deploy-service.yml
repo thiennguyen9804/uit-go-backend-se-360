@@ -79,6 +79,7 @@ jobs:
           fi
 
           # Get service name/path from input or changed files
+          SERVICE_PATH=""
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             SERVICE_NAME="${{ github.event.inputs.service_name }}"
             SERVICE_PATH_INPUT="${{ github.event.inputs.service_path }}"
@@ -115,6 +116,16 @@ jobs:
               # Try to find from Dockerfile or source files
               SERVICE_NAME=$(echo "$CHANGED_FILES" | grep -oP '^\K[^/]+(?=/)' | sort -u | head -1)
             fi
+
+            # If still empty, fail
+            if [ -z "$SERVICE_NAME" ]; then
+              echo "❌ Could not determine service name from changes"
+              echo "💡 Tip: run via workflow_dispatch and provide service_name/service_path."
+              exit 1
+            fi
+
+            # Default service path equals service name when auto-detected
+            SERVICE_PATH="$SERVICE_NAME"
           fi
           
           if [ -z "$SERVICE_NAME" ]; then
