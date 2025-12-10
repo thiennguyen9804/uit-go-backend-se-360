@@ -71,6 +71,7 @@ jobs:
           
           BASE_SHA="${{ github.event.before }}"
           HEAD_SHA="${{ github.sha }}"
+          CHANGED_FILES=""
 
           # Normalize BASE_SHA for cases where GitHub provides 000... or empty (e.g., force push / first commit)
           if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
@@ -88,6 +89,8 @@ jobs:
               SERVICE_PATH="$SERVICE_NAME"
               echo "📋 Using service name from workflow_dispatch: $SERVICE_NAME"
             fi
+            # No diff when manual; set changed files to service config path for reference
+            CHANGED_FILES="$SERVICE_PATH/service.yml"
           else
             # Auto-detect from changed files
             echo "🔍 Auto-detecting service from changed files..."
@@ -141,6 +144,9 @@ jobs:
           echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
           echo "service_path=$SERVICE_PATH" >> $GITHUB_OUTPUT
           echo "service_config=$SERVICE_CONFIG" >> $GITHUB_OUTPUT
+          # Ensure CHANGED_FILES is defined
+          : "${CHANGED_FILES:=}"
+
           # Write changed files safely (multiline) to output
           {
             echo "changed_files<<EOF"
