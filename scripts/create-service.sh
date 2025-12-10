@@ -22,8 +22,13 @@ fi
 SERVICE_DIR="$SERVICE_NAME"
 # Sanitize for Java package/class naming (remove hyphens)
 PKG_NAME="${SERVICE_NAME//-/}"
-# CamelCase class name (e.g., demo-service -> DemoService)
-CLASS_NAME=$(echo "$SERVICE_NAME" | awk -F'-' '{for(i=1;i<=NF;i++){ $i=toupper(substr($i,1,1)) substr($i,2)}; OFS=""; print}')
+# CamelCase class name from original name (e.g., demo-service -> DemoService)
+CLASS_NAME=$(python3 - "$SERVICE_NAME" <<'PY'
+import sys
+parts = sys.argv[1].strip().split('-')
+print(''.join(p.capitalize() for p in parts if p))
+PY
+)
 TEMPLATE_DIR=".github/templates/service-template"
 
 echo "🚀 Creating new service: $SERVICE_NAME"
@@ -79,9 +84,13 @@ case $LANGUAGE in
   maven)
     echo "📦 Creating Maven/Spring Boot service..."
     
-    mkdir -p "src/main/java/com/example/${PKG_NAME}"
-    mkdir -p "src/main/resources"
-    mkdir -p "src/test/java/com/example/${PKG_NAME}"
+    SRC_MAIN="src/main/java/com/example/${PKG_NAME}"
+    SRC_TEST="src/test/java/com/example/${PKG_NAME}"
+    RESOURCES_DIR="src/main/resources"
+    mkdir -p "${SRC_MAIN}"
+    mkdir -p "${SRC_MAIN}/controller"
+    mkdir -p "${RESOURCES_DIR}"
+    mkdir -p "${SRC_TEST}"
     
     # Create pom.xml
     cat > pom.xml <<EOF
@@ -95,7 +104,7 @@ case $LANGUAGE in
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.0</version>
+        <version>2.7.18</version>
         <relativePath/>
     </parent>
     
@@ -105,7 +114,7 @@ case $LANGUAGE in
     <name>${SERVICE_NAME}</name>
     
     <properties>
-        <java.version>21</java.version>
+        <java.version>11</java.version>
     </properties>
     
     <dependencies>
@@ -138,7 +147,7 @@ EOF
     # Create Dockerfile
     cat > Dockerfile <<'DOCKERFILE'
 # ========================= 1. BUILDER STAGE =========================
-FROM maven:3.9.9-eclipse-temurin-21 AS builder
+FROM maven:3.9.9-eclipse-temurin-11 AS builder
 WORKDIR /app
 
 # Copy pom.xml first for better caching
@@ -153,7 +162,7 @@ RUN mvn clean package -DskipTests -B \
     && java -Djarmode=tools -jar target/*.jar extract --layers --destination target/extracted
 
 # ========================= 2. RUNTIME STAGE =========================
-FROM bellsoft/liberica-openjre-debian:21.0.8-cds AS final
+FROM eclipse-temurin:11-jre AS final
 WORKDIR /app
 
 COPY --from=builder /app/target/extracted/dependencies/ ./
@@ -170,7 +179,7 @@ DOCKERFILE
     
     # Create Spring Boot application
     APP_CLASS="${CLASS_NAME}Application"
-    cat > "src/main/java/com/example/${PKG_NAME}/${APP_CLASS}.java" <<EOF
+    cat > "${SRC_MAIN}/${APP_CLASS}.java" <<EOF
 package com.example.${PKG_NAME};
 
 import org.springframework.boot.SpringApplication;
@@ -185,7 +194,7 @@ public class ${APP_CLASS} {
 EOF
 
     # Create controller
-    cat > "src/main/java/com/example/${PKG_NAME}/controller/HealthController.java" <<EOF
+    cat > "${SRC_MAIN}/controller/HealthController.java" <<EOF
 package com.example.${PKG_NAME}.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
