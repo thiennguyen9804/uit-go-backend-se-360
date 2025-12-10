@@ -9,10 +9,6 @@ on:
       - 'provision/**'
       - 'modules/**'
       - '.github/workflows/ci-cd.yml'
-      # Build/test triggers (for entire solution)
-      - '**/pom.xml'
-      - '**/*.csproj'
-      - 'uit-go-backend.sln'
   workflow_dispatch:
     # Manual trigger for infrastructure deployment
 
