@@ -7,6 +7,11 @@ on:
         description: 'Service name (folder name, e.g., payment-service)'
         required: true
         type: string
+      ref:
+        description: 'Git ref/branch to checkout (optional, defaults to current ref)'
+        required: false
+        type: string
+        default: ''
       service_path:
         description: 'Optional: path to service folder (relative to repo root). If empty, defaults to service_name'
         required: false
@@ -57,6 +62,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.inputs.ref != '' && github.event.inputs.ref || github.ref }}
       
       - name: Discover Service
         id: discover
@@ -118,8 +124,17 @@ jobs:
           
           if [ ! -f "$SERVICE_CONFIG" ]; then
             echo "❌ Service config not found: $SERVICE_CONFIG"
-            echo "💡 Create service.yml in your service directory"
-            echo "   Run: ./scripts/create-service.sh $SERVICE_NAME"
+            echo "📂 Repo root contents:"
+            ls -la
+            echo "📂 Service path contents (if exists):"
+            ls -la "$SERVICE_PATH" 2>/dev/null || true
+            echo "🔍 Searching for service.yml in repo:"
+            find . -maxdepth 4 -name 'service.yml' -print || true
+            echo "💡 Hints:"
+            echo "  - Đảm bảo đã commit & push service.yml lên branch/ref này."
+            echo "  - Nếu dùng workflow_dispatch, set 'service_path' nếu service nằm trong thư mục con khác."
+            echo "  - Hoặc set 'ref' để checkout đúng branch có service."
+            echo "  - Có thể tạo service bằng: ./scripts/create-service.sh $SERVICE_NAME"
             exit 1
           fi
           
