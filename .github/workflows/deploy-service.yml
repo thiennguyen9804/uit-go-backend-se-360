@@ -417,7 +417,7 @@ jobs:
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-plan-${{ needs.discover-service.outputs.service_name }}
+          name: terraform-plan-${{ needs.discover-service.outputs.service_name }}-${{ github.run_id }}
           path: modules/self_service/examples/tfplan
 
   terraform-apply:
@@ -439,12 +439,25 @@ jobs:
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
         with:
-          name: terraform-plan-${{ needs.discover-service.outputs.service_name }}
+          name: terraform-plan-${{ needs.discover-service.outputs.service_name }}-${{ github.run_id }}
           path: modules/self_service/examples
 
       - name: Terraform Init (apply)
         working-directory: modules/self_service/examples
         run: terraform init -input=false
+
+      - name: Validate plan artifact
+        working-directory: modules/self_service/examples
+        run: |
+          set -euo pipefail
+          if [ ! -f tfplan ]; then
+            echo "❌ tfplan artifact missing. Plan step may have failed."
+            exit 1
+          fi
+          terraform show -no-color tfplan > /tmp/tfplan.txt || {
+            echo "❌ tfplan is invalid. Regenerate plan."
+            exit 1
+          }
       
       - name: Parse Service Config
         id: config
