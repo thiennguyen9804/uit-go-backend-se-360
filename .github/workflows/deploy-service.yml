@@ -441,6 +441,10 @@ jobs:
         with:
           name: terraform-plan-${{ needs.discover-service.outputs.service_name }}
           path: modules/self_service/examples
+
+      - name: Terraform Init (apply)
+        working-directory: modules/self_service/examples
+        run: terraform init -input=false
       
       - name: Parse Service Config
         id: config
