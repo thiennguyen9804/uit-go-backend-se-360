@@ -115,7 +115,12 @@ jobs:
           echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
           echo "service_path=$SERVICE_PATH" >> $GITHUB_OUTPUT
           echo "service_config=$SERVICE_CONFIG" >> $GITHUB_OUTPUT
-          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+          # Write changed files safely (multiline) to output
+          {
+            echo "changed_files<<EOF"
+            echo "$CHANGED_FILES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
           
           echo "✅ Discovered service: $SERVICE_NAME"
           echo "📁 Path: $SERVICE_PATH"
