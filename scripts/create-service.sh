@@ -157,21 +157,18 @@ RUN mvn dependency:go-offline -B
 # Copy source code
 COPY src ./src
 
-# Build
-RUN mvn clean package -DskipTests -B \
-    && java -Djarmode=tools -jar target/*.jar extract --layers --destination target/extracted
+# Build (skip tests for image build)
+RUN mvn -B -ntp clean package -DskipTests
 
 # ========================= 2. RUNTIME STAGE =========================
 FROM eclipse-temurin:11-jre AS final
 WORKDIR /app
 
-COPY --from=builder /app/target/extracted/dependencies/ ./
-COPY --from=builder /app/target/extracted/spring-boot-loader/ ./
-COPY --from=builder /app/target/extracted/snapshot-dependencies/ ./
-COPY --from=builder /app/target/extracted/application/ ./
+# Copy fat jar
+COPY --from=builder /app/target/*.jar /app/app.jar
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "SERVICE_NAME-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 DOCKERFILE
     
     # Replace SERVICE_NAME in Dockerfile
