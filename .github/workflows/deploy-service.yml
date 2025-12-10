@@ -51,13 +51,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       
       - name: Discover Service
         id: discover
         run: |
           set -euo pipefail
           
+          BASE_SHA="${{ github.event.before }}"
+          HEAD_SHA="${{ github.sha }}"
+
+          # Normalize BASE_SHA for cases where GitHub provides 000... or empty (e.g., force push / first commit)
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA=$(git rev-parse HEAD^ 2>/dev/null || true)
+          fi
+
           # Get service name from input or changed files
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             SERVICE_NAME="${{ github.event.inputs.service_name }}"
@@ -65,10 +73,17 @@ jobs:
           else
             # Auto-detect from changed files
             echo "🔍 Auto-detecting service from changed files..."
-            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} || echo "")
+            
+            if [ -n "$BASE_SHA" ]; then
+              CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" 2>/dev/null || echo "")
+            else
+              # Fallback to previous commit if BASE_SHA not available
+              CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+            fi
             
             if [ -z "$CHANGED_FILES" ]; then
               echo "❌ No changed files detected"
+              echo "💡 Tip: run via workflow_dispatch and provide service_name, or ensure there are changes in service paths."
               exit 1
             fi
             
