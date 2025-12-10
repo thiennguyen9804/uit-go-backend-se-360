@@ -323,8 +323,18 @@ jobs:
           SERVICE_CONFIG="${{ needs.discover-service.outputs.service_config }}"
           
           # Get build context from config
-          CONTEXT=$(yq eval '.service.build.context' "$SERVICE_CONFIG" || echo ".")
-          DOCKERFILE=$(yq eval '.service.build.dockerfile' "$SERVICE_CONFIG" || echo "Dockerfile")
+          CONTEXT=$(yq eval '.service.build.context' "$SERVICE_CONFIG" 2>/dev/null || echo ".")
+          DOCKERFILE=$(yq eval '.service.build.dockerfile' "$SERVICE_CONFIG" 2>/dev/null || echo "Dockerfile")
+          
+          # Normalize null/empty context to current dir
+          if [ -z "$CONTEXT" ] || [ "$CONTEXT" = "null" ]; then
+            CONTEXT="."
+          fi
+          
+          # Normalize null/empty dockerfile to default
+          if [ -z "$DOCKERFILE" ] || [ "$DOCKERFILE" = "null" ]; then
+            DOCKERFILE="Dockerfile"
+          fi
           
           IMAGE="${{ secrets.ACR_NAME }}.azurecr.io/${SERVICE_NAME}:latest"
           IMAGE_TAG="${{ secrets.ACR_NAME }}.azurecr.io/${SERVICE_NAME}:${{ github.sha }}"
