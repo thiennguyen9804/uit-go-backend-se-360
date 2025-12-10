@@ -25,3 +25,17 @@ modules/self_service/examples/tfvars.auto.tfvars
 provision/complete_demo/.terraform.lock.hcl
 provision/complete_demo/.terraform/
 
+# Terraform state
+terraform.tfstate
+terraform.tfstate.*
+
+# Terraform working directory
+**/.terraform/
+
+# Lock file (tuỳ team, thường ignore nếu CI regen)
+**/.terraform.lock.hcl
+
+# Variables (chứa secret)
+*.tfvars
+*.tfvars.json
+*.auto.tfvars

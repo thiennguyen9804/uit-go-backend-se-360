@@ -9,7 +9,7 @@ resource "azurerm_resource_group" "this" {
 
 // Create or reuse an ACR
 module "acr" {
-  source              = "../container_registry"
+  source              = "../../container_registry"
   resource_group_name = azurerm_resource_group.this.name
   location            = var.location
   tags                = var.tags
@@ -17,7 +17,7 @@ module "acr" {
 
 // Create or reuse a Container Apps environment (requires a subnet id)
 module "aca_env" {
-  source              = "../container_app_env"
+  source              = "../../container_app_env"
   resource_group_name = azurerm_resource_group.this.name
   location            = var.location
   aca_subnet_id       = local.aca_subnet_id_final
@@ -26,8 +26,18 @@ module "aca_env" {
 
 // Deploy the service into Container Apps using the existing service_container module
 module "service" {
-  source                       = "../service_container"
-  services                     = { (var.service_key) = { port = var.service_port, external = var.external } }
+  source                       = "../../service_container"
+  services                     = { 
+    (var.service_key) = { 
+      port = var.service_port, 
+      external = var.external,
+      cpu = var.cpu,
+      memory = var.memory,
+      min_replicas = var.min_replicas,
+      max_replicas = var.max_replicas,
+      image = var.image != "" ? var.image : "${module.acr.acr_login_server}/${var.service_key}:latest"
+    } 
+  }
   container_app_environment_id = module.aca_env.container_app_environment_id
   resource_group_name          = azurerm_resource_group.this.name
   identity_id                  = module.aca_env.aca_identity_id

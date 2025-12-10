@@ -8,51 +8,6 @@ variable "location" {
   default = "eastus"
 }
 
-variable "container_group_name" {
-  type    = string
-  default = "example-cg"
-}
-
-variable "container_name" {
-  type    = string
-  default = "example-container"
-}
-
-variable "dns_name_label" {
-  type    = string
-  default = "example-svc"
-}
-
-variable "image" {
-  type    = string
-  default = ""
-}
-
-variable "ports" {
-  type    = list(number)
-  default = [80]
-}
-
-variable "cpu" {
-  type    = number
-  default = 0.5
-}
-
-variable "memory" {
-  type    = number
-  default = 1
-}
-
-variable "environment_variables" {
-  type    = map(string)
-  default = {}
-}
-
-variable "tags" {
-  type    = map(string)
-  default = {}
-}
-
 variable "aca_subnet_id" {
   description = "Subnet id to use for Container Apps environment (required)."
   type        = string
@@ -101,6 +56,36 @@ variable "external" {
   default     = true
 }
 
+variable "image" {
+  description = "Full image URL (e.g., acr.azurecr.io/service:latest)"
+  type        = string
+  default     = ""
+}
+
+variable "cpu" {
+  description = "CPU cores for the container (0.25, 0.5, 1.0, etc.)"
+  type        = number
+  default     = 0.5
+}
+
+variable "memory" {
+  description = "Memory for the container (e.g., 0.5Gi, 1.0Gi)"
+  type        = string
+  default     = "1.0Gi"
+}
+
+variable "min_replicas" {
+  description = "Minimum number of replicas (0 for scale-to-zero)"
+  type        = number
+  default     = 0
+}
+
+variable "max_replicas" {
+  description = "Maximum number of replicas"
+  type        = number
+  default     = 3
+}
+
 variable "db_hostname" {
   type    = string
   default = ""
@@ -114,6 +99,7 @@ variable "db_admin_username" {
 variable "db_admin_password" {
   type    = string
   default = ""
+  sensitive = true
 }
 
 variable "kafka_bootstrap_server" {
@@ -124,6 +110,7 @@ variable "kafka_bootstrap_server" {
 variable "kafka_connection_string" {
   type    = string
   default = ""
+  sensitive = true
 }
 
 variable "redis_hostname" {
@@ -139,4 +126,10 @@ variable "redis_port" {
 variable "redis_password" {
   type    = string
   default = ""
+  sensitive = true
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
 }
