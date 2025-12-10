@@ -1,0 +1,30 @@
+service:
+  name: "demo-service"
+  display_name: "Demo-service"
+  description: "Auto-generated demo-service service"
+  version: "1.0.0"
+  
+  build:
+    language: "maven"
+    dockerfile: "Dockerfile"
+    
+  runtime:
+    port: 8080
+    health_check_path: "/actuator/health"
+    cpu: 0.5
+    memory: "1.0Gi"
+    min_replicas: 0
+    max_replicas: 3
+    
+  networking:
+    external: false
+    
+  dependencies:
+    database: false
+    kafka: false
+    redis: false
+    
+  tags:
+    team: "backend"
+    environment: "dev"
+    managed_by: "self-service-platform"
