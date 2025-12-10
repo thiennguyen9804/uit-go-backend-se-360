@@ -20,6 +20,10 @@ if [[ ! "$SERVICE_NAME" =~ ^[a-z0-9-]+$ ]]; then
 fi
 
 SERVICE_DIR="$SERVICE_NAME"
+# Sanitize for Java package/class naming (remove hyphens)
+PKG_NAME="${SERVICE_NAME//-/}"
+# CamelCase class name (e.g., demo-service -> DemoService)
+CLASS_NAME=$(echo "$SERVICE_NAME" | awk -F'-' '{for(i=1;i<=NF;i++){ $i=toupper(substr($i,1,1)) substr($i,2)}; OFS=""; print}')
 TEMPLATE_DIR=".github/templates/service-template"
 
 echo "🚀 Creating new service: $SERVICE_NAME"
@@ -75,9 +79,9 @@ case $LANGUAGE in
   maven)
     echo "📦 Creating Maven/Spring Boot service..."
     
-    mkdir -p "src/main/java/com/example/${SERVICE_NAME}"
+    mkdir -p "src/main/java/com/example/${PKG_NAME}"
     mkdir -p "src/main/resources"
-    mkdir -p "src/test/java/com/example/${SERVICE_NAME}"
+    mkdir -p "src/test/java/com/example/${PKG_NAME}"
     
     # Create pom.xml
     cat > pom.xml <<EOF
@@ -165,9 +169,9 @@ DOCKERFILE
     sed -i "s/SERVICE_NAME/${SERVICE_NAME}/g" Dockerfile
     
     # Create Spring Boot application
-    APP_CLASS="${SERVICE_NAME^}Application"
-    cat > "src/main/java/com/example/${SERVICE_NAME}/${APP_CLASS}.java" <<EOF
-package com.example.${SERVICE_NAME};
+    APP_CLASS="${CLASS_NAME}Application"
+    cat > "src/main/java/com/example/${PKG_NAME}/${APP_CLASS}.java" <<EOF
+package com.example.${PKG_NAME};
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -181,8 +185,8 @@ public class ${APP_CLASS} {
 EOF
 
     # Create controller
-    cat > "src/main/java/com/example/${SERVICE_NAME}/controller/HealthController.java" <<EOF
-package com.example.${SERVICE_NAME}.controller;
+    cat > "src/main/java/com/example/${PKG_NAME}/controller/HealthController.java" <<EOF
+package com.example.${PKG_NAME}.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -203,7 +207,7 @@ server:
 
 spring:
   application:
-    name: ${SERVICE_NAME}
+    name: ${PKG_NAME}
 
 management:
   endpoints:
