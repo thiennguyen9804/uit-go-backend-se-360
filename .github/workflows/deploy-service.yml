@@ -372,6 +372,18 @@ jobs:
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Export ARM env (plan)
+        run: |
+          set -euo pipefail
+          SUBS=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.subscriptionId')
+          TENANT=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.tenantId')
+          CLIENT=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientId')
+          SECRET=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientSecret')
+          echo "ARM_SUBSCRIPTION_ID=$SUBS" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=$TENANT" >> $GITHUB_ENV
+          echo "ARM_CLIENT_ID=$CLIENT" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=$SECRET" >> $GITHUB_ENV
       
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -440,6 +452,18 @@ jobs:
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Export ARM env (apply)
+        run: |
+          set -euo pipefail
+          SUBS=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.subscriptionId')
+          TENANT=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.tenantId')
+          CLIENT=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientId')
+          SECRET=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientSecret')
+          echo "ARM_SUBSCRIPTION_ID=$SUBS" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=$TENANT" >> $GITHUB_ENV
+          echo "ARM_CLIENT_ID=$CLIENT" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=$SECRET" >> $GITHUB_ENV
       
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
