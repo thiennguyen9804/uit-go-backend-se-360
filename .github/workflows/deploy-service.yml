@@ -7,6 +7,11 @@ on:
         description: 'Service name (folder name, e.g., payment-service)'
         required: true
         type: string
+      service_path:
+        description: 'Optional: path to service folder (relative to repo root). If empty, defaults to service_name'
+        required: false
+        type: string
+        default: ''
       skip_tests:
         description: 'Skip tests'
         required: false
@@ -66,10 +71,17 @@ jobs:
             BASE_SHA=$(git rev-parse HEAD^ 2>/dev/null || true)
           fi
 
-          # Get service name from input or changed files
+          # Get service name/path from input or changed files
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             SERVICE_NAME="${{ github.event.inputs.service_name }}"
-            echo "📋 Using service name from workflow_dispatch: $SERVICE_NAME"
+            SERVICE_PATH_INPUT="${{ github.event.inputs.service_path }}"
+            if [ -n "$SERVICE_PATH_INPUT" ]; then
+              SERVICE_PATH="$SERVICE_PATH_INPUT"
+              echo "📋 Using service path from workflow_dispatch: $SERVICE_PATH"
+            else
+              SERVICE_PATH="$SERVICE_NAME"
+              echo "📋 Using service name from workflow_dispatch: $SERVICE_NAME"
+            fi
           else
             # Auto-detect from changed files
             echo "🔍 Auto-detecting service from changed files..."
@@ -102,7 +114,6 @@ jobs:
             exit 1
           fi
           
-          SERVICE_PATH="$SERVICE_NAME"
           SERVICE_CONFIG="$SERVICE_PATH/service.yml"
           
           if [ ! -f "$SERVICE_CONFIG" ]; then
