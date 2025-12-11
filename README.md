@@ -18,7 +18,7 @@ To enable Firebase Cloud Messaging (FCM) for sending notifications, you need to 
 3. Navigate to **Project settings** (click the gear icon in the top-left corner) > **Service accounts** tab.
 4. Under **Firebase Admin SDK**, click **Generate new private key**.
 5. Save the downloaded file as `firebase-service-account.json`.
-6. Place this file in the `matching-service/src/main/resources/` directory of the project.
+6. Place this file in the `notification-service/src/main/resources/` directory of the project.
    - **Important**: Do not commit this file to Git. Ensure it is added to `.gitignore` to prevent accidental exposure.
 
 ### Step 2: Build and Run the Application
