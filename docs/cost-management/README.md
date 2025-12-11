@@ -1,4 +1,4 @@
-# Tổng quan cho Giảng viên: Azure Cost Management (tương đương AWS CE/Budgets)
+# Tổng quan : Azure Cost Management (tương đương AWS CE/Budgets)
 
 ## Mục tiêu
 - Phân tích chi phí qua Azure Cost Analysis (thay cho AWS Cost Explorer).

@@ -37,12 +37,12 @@ variable "budget_contact_emails" {
 variable "budget_start_date" {
   description = "UTC start date for the budget (RFC3339). Defaults to first day of current month."
   type        = string
-  default     = formatdate("YYYY-MM-01T00:00:00Z", timestamp())
+  default     = "2025-12-01T00:00:00Z"
 }
 
 variable "budget_end_date" {
   description = "UTC end date for the budget (RFC3339). Defaults to one year from start."
   type        = string
-  default     = timeadd(formatdate("YYYY-MM-01T00:00:00Z", timestamp()), "8760h")
+  default     = "2026-01-01T00:00:00Z"
 }
 
