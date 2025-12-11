@@ -531,7 +531,46 @@ jobs:
       - name: Terraform Apply
         working-directory: modules/self_service/examples
         run: |
-          terraform apply -input=false -auto-approve tfplan
+          set -euo pipefail
+          
+          # Apply terraform plan
+          if ! terraform apply -input=false -auto-approve tfplan; then
+            echo "⚠️  First apply attempt failed. This might be due to subnet destroy order."
+            echo "🔄 Retrying with explicit destroy order..."
+            
+            # If apply fails due to subnet in use, try destroying in correct order
+            # First, check if it's a destroy operation that failed
+            if terraform show -no-color tfplan | grep -q "will be destroyed"; then
+              echo "📋 Destroying resources in correct order..."
+              
+              # Destroy service first
+              terraform destroy -target=module.service -auto-approve -input=false || true
+              
+              # Wait a bit for Azure to clean up
+              echo "⏳ Waiting for Azure to clean up service association links..."
+              sleep 30
+              
+              # Destroy Container Apps Environment
+              terraform destroy -target=module.aca_env -auto-approve -input=false || true
+              
+              # Wait again
+              echo "⏳ Waiting for Azure to clean up..."
+              sleep 30
+              
+              # Now try apply again
+              echo "🔄 Retrying terraform apply..."
+              terraform apply -input=false -auto-approve tfplan || {
+                echo "❌ Terraform apply failed after retry"
+                echo "💡 If subnet is still in use, you may need to manually delete Container Apps Environment first"
+                exit 1
+              }
+            else
+              echo "❌ Terraform apply failed (not a destroy operation)"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ Terraform apply completed successfully"
       
       - name: Get Service URL
         id: outputs

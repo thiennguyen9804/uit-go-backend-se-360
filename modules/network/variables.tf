@@ -31,3 +31,8 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+variable "container_app_environment_id" {
+  description = "Container Apps Environment ID to create dependency for proper destroy order. Subnet will be destroyed after this resource."
+  type        = string
+  default     = null
+}
