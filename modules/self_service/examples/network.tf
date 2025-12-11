@@ -12,8 +12,6 @@ module "network" {
   aca_subnet_address_space = var.aca_subnet_address_space
   db_subnet_address_space  = var.db_subnet_address_space
   tags                 = var.tags
-  # Pass Container Apps Environment ID to ensure proper destroy order
-  # Subnet will be destroyed after Container Apps Environment
-  # Using try() to avoid circular dependency during plan phase
-  container_app_environment_id = try(module.aca_env.container_app_environment_id, null)
+  # Note: Destroy order is handled by retry logic in GitHub Actions workflow
+  # Terraform cannot automatically determine destroy order for subnet used by Container Apps
 }

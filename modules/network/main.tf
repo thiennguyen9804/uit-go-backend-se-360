@@ -22,12 +22,7 @@ resource "azurerm_subnet" "aca" {
 		}
 	}
 	
-	# Dependencies: VNet must exist, and if Container Apps Environment ID is provided,
-	# subnet will be destroyed after it (ensuring proper destroy order)
-	depends_on = compact([
-		azurerm_virtual_network.main,
-		var.container_app_environment_id
-	])
+	depends_on = [azurerm_virtual_network.main]
 
 	lifecycle {
 		# Prevent destroy if subnet is in use by Container Apps Environment
