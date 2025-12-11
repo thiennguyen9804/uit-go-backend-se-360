@@ -1,4 +1,19 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~>3.6"
+    }
+  }
+  backend "azurerm" {
+      resource_group_name  = "rg-terraform-state"
+      storage_account_name = "sttfstate02b090"
+      container_name       = "tfstate"
+      key                  = "self-service-example.terraform.tfstate"
+  }
+}
 provider "azurerm" {
+  
   features {}
 }
 
@@ -26,6 +41,7 @@ module "aca_env" {
 
 // Deploy the service into Container Apps using the existing service_container module
 module "service" {
+  count                        = var.deploy_service ? 1 : 0
   source                       = "../../service_container"
   services                     = { 
     (var.service_key) = { 
@@ -60,5 +76,15 @@ output "service_acr" {
 
 output "service_fqdn" {
   description = "(If external) the hostname to reach the service"
-  value       = "${module.acr.acr_login_server}/${var.service_key}:latest"
+  value       = var.deploy_service ? try(module.service[0].container_app_fqdns[var.service_key], "") : ""
+}
+
+output "service_resource_group" {
+  description = "Resource group where the service is deployed"
+  value       = azurerm_resource_group.this.name
+}
+
+output "aca_subnet_id" {
+  description = "Subnet ID used for Container Apps Environment"
+  value       = local.aca_subnet_id_final
 }

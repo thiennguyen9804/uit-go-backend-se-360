@@ -4,8 +4,9 @@ variable "resource_group_name" {
 }
 
 variable "location" {
-  type    = string
-  default = "eastus"
+  description = "Azure region for all resources."
+  type        = string
+  default     = "eastasia"
 }
 
 variable "aca_subnet_id" {
@@ -18,6 +19,12 @@ variable "create_network" {
   description = "If true, examples will create a new VNet + subnets using the modules/network module and set aca_subnet_id automatically."
   type        = bool
   default     = false
+}
+
+variable "deploy_service" {
+  description = "If true, deploy the service container app. If false, only create infrastructure (ACR, ACA env, network)."
+  type        = bool
+  default     = true
 }
 
 variable "vnet_address_space" {
