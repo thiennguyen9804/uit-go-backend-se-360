@@ -428,12 +428,12 @@ jobs:
         id: plan
         working-directory: modules/self_service/examples
         run: |
-          # Best practice: Network should be managed separately, not in service deployment workflow
-          # Ensure create_network=false to avoid destroy order issues
+          # NOTE: Align with current state (network created in this state)
+          # Set create_network=true to avoid Terraform trying to delete existing subnet
           terraform plan -input=false \
             -var="service_key=${{ needs.discover-service.outputs.service_name }}" \
             -var="aca_subnet_id=${{ secrets.ACA_SUBNET_ID }}" \
-            -var="create_network=false" \
+            -var="create_network=true" \
             -var="service_port=${{ steps.config.outputs.port }}" \
             -var="external=${{ steps.config.outputs.external }}" \
             -var="image=${{ needs.build-and-test.outputs.image }}" \
