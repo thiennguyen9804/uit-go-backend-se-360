@@ -27,3 +27,19 @@ After setting up the Firebase Service Account Key, run the following command to 
 
 ```bash
 docker compose up --build -d
+```
+
+## CI/CD Pipeline
+
+The workflow `.github/workflows/ci-cd.yml` automates build/test, Docker image publishing, and Terraform operations when working on the main branch.
+
+### Pipeline Steps
+
+1. **Build & Test** – Runs `dotnet build/test` for the entire solution and `mvn test` for each Java service , .Net service.
+2. **Docker Publish** – Logs in to ACR (via `azure/login`) and executes `./build-and-push.sh` to build and push images.
+3. **Terraform Deploy** – run `terraform fmt/validate/plan` and `terraform apply` (requires a remote backend).
+
+
+### Tài liệu tham khảo
+
+- Detailed Terraform + CI/CD documentation: `docs/platform/README.md`
