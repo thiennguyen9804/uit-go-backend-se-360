@@ -23,6 +23,11 @@ resource "azurerm_subnet" "aca" {
 	}
 	depends_on = [azurerm_virtual_network.main]
 
+	lifecycle {
+		# Prevent destroy if subnet is in use by Container Apps Environment
+		# Terraform will destroy Container Apps Environment first, then subnet
+		create_before_destroy = false
+	}
 }
 
 resource "azurerm_subnet" "db" {

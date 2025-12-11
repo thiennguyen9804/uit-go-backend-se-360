@@ -12,4 +12,11 @@ module "network" {
   aca_subnet_address_space = var.aca_subnet_address_space
   db_subnet_address_space  = var.db_subnet_address_space
   tags                 = var.tags
+  
+  # Ensure Container Apps Environment is destroyed before subnet
+  # This prevents "InUseSubnetCannotBeDeleted" error during destroy
+  depends_on = [
+    module.aca_env,
+    module.service
+  ]
 }

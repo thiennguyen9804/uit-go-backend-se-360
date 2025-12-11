@@ -18,11 +18,14 @@ resource "azurerm_container_app" "microservices" {
   }
 
   template {
+    min_replicas = lookup(each.value, "min_replicas", 0)
+    max_replicas = lookup(each.value, "max_replicas", 3)
+    
     container {
       name   = each.key
-      image  = "${var.acr_login_server}/${each.key}:latest"
-      cpu    = 0.5
-      memory = "1.0Gi"
+      image  = lookup(each.value, "image", "${var.acr_login_server}/${each.key}:latest")
+      cpu    = lookup(each.value, "cpu", 0.5)
+      memory = lookup(each.value, "memory", "1.0Gi")
 
       env {
         name  = "ASPNETCORE_ENVIRONMENT"
