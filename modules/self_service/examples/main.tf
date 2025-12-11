@@ -71,6 +71,13 @@ module "service" {
   tags                         = var.tags
 }
 
+# Allow ACA managed identity to pull from ACR
+resource "azurerm_role_assignment" "aca_acr_pull" {
+  scope                = module.acr.acr_id
+  role_definition_name = "AcrPull"
+  principal_id         = module.aca_env.aca_identity_principal_id
+}
+
 output "service_acr" {
   description = "ACR login server used for the pushed image"
   value       = module.acr.acr_login_server
