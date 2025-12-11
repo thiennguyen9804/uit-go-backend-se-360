@@ -31,19 +31,19 @@ Nền tảng Self-Service được thiết kế với các nguyên tắc:
                        │
                        ▼
         ┌───────────────────────────────────┐
-        │  3. Validate                       │
-        │     ./scripts/validate-service.sh  │
+        │  3. Validate                      │
+        │     ./scripts/validate-service.sh │
         └──────────────┬────────────────────┘
                        │
                        ▼
         ┌───────────────────────────────────┐
-        │  4. Commit & Push                  │
-        │     git push origin main           │
+        │  4. Commit & Push                 │
+        │     git push origin prpduction    │
         └──────────────┬────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              GitHub Actions Workflow                         │
+│              GitHub Actions Workflow                        │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
@@ -179,20 +179,6 @@ container_registry
 - **Azure Key Vault**: Database passwords, connection strings
 - **Managed Identity**: Service-to-service authentication
 
-##  Monitoring & Observability
-
-### Metrics Collected
-
-- **Deployment Metrics**:
-  - Deployment success/failure rate
-  - Deployment duration
-  - Service availability
-
-- **Runtime Metrics**:
-  - CPU/Memory usage
-  - Request rate
-  - Error rate
-  - Response time
 
 ### Logging
 
@@ -213,12 +199,7 @@ container_registry
 - **CPU**: 0.25, 0.5, 1.0, 1.5, 2.0 vCPU
 - **Memory**: 0.5Gi, 1.0Gi, 2.0Gi, 4.0Gi
 
-## 🔄 Rollback Strategy
 
-### Automatic Rollback
-
-- Health check failures trigger rollback
-- Previous revision automatically promoted
 
 ### Manual Rollback
 
