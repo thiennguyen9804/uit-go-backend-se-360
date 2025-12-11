@@ -533,39 +533,86 @@ jobs:
         run: |
           set -euo pipefail
           
+          RG_NAME="${{ secrets.AZURE_RG_NAME }}"
+          
+          # Construct Container Apps Environment name (matches module naming pattern)
+          # Pattern: aca-env-${lower(replace(resource_group_name, "-", ""))}
+          ENV_NAME="aca-env-$(echo $RG_NAME | tr '[:upper:]' '[:lower:]' | tr -d '-')"
+          
           # Apply terraform plan
-          if ! terraform apply -input=false -auto-approve tfplan; then
-            echo "⚠️  First apply attempt failed. This might be due to subnet destroy order."
-            echo "🔄 Retrying with explicit destroy order..."
+          if ! terraform apply -input=false -auto-approve tfplan 2>&1 | tee /tmp/apply_output.log; then
+            APPLY_ERROR=$(cat /tmp/apply_output.log)
             
-            # If apply fails due to subnet in use, try destroying in correct order
-            # First, check if it's a destroy operation that failed
-            if terraform show -no-color tfplan | grep -q "will be destroyed"; then
-              echo "📋 Destroying resources in correct order..."
+            # Only retry if error is related to subnet in use
+            if echo "$APPLY_ERROR" | grep -q "InUseSubnetCannotBeDeleted\|subnet.*in use"; then
+              echo "⚠️  Apply failed due to subnet in use."
+              echo "💡 Subnet is being used by Container Apps Environment. Deleting environment to release subnet..."
               
-              # Destroy service first
-              terraform destroy -target=module.service -auto-approve -input=false || true
+              # Delete Container Apps Environment (this is what uses the subnet)
+              # Note: Container Apps themselves don't use the subnet directly, only the Environment does
+              echo "📋 Deleting Container Apps Environment: $ENV_NAME"
+              if az containerapp env show --name "$ENV_NAME" --resource-group "$RG_NAME" &>/dev/null; then
+                echo "🗑️  Deleting Container Apps Environment..."
+                az containerapp env delete --name "$ENV_NAME" --resource-group "$RG_NAME" --yes || true
+                
+                # Wait for Environment to be fully deleted
+                echo "⏳ Waiting for Container Apps Environment to be deleted..."
+                MAX_WAIT=300  # 5 minutes max
+                ELAPSED=0
+                while [ $ELAPSED -lt $MAX_WAIT ]; do
+                  if ! az containerapp env show --name "$ENV_NAME" --resource-group "$RG_NAME" &>/dev/null; then
+                    echo "✅ Container Apps Environment deleted"
+                    break
+                  fi
+                  echo "   Still deleting... (${ELAPSED}s elapsed)"
+                  sleep 10
+                  ELAPSED=$((ELAPSED + 10))
+                done
+                
+                if [ $ELAPSED -ge $MAX_WAIT ]; then
+                  echo "⚠️  Timeout waiting for Environment deletion, but continuing..."
+                fi
+                
+                # Additional wait for service association links cleanup
+                echo "⏳ Waiting additional 30s for Azure to clean up service association links..."
+                sleep 30
+                
+                # Remove from Terraform state to avoid conflicts
+                echo "🧹 Cleaning up Terraform state..."
+                terraform state rm "module.aca_env.azurerm_container_app_environment.main" 2>/dev/null || true
+                
+                # Refresh state
+                terraform refresh -input=false || true
+              else
+                echo "⚠️  Container Apps Environment not found, may have been deleted already"
+              fi
               
-              # Wait a bit for Azure to clean up
-              echo "⏳ Waiting for Azure to clean up service association links..."
-              sleep 30
-              
-              # Destroy Container Apps Environment
-              terraform destroy -target=module.aca_env -auto-approve -input=false || true
-              
-              # Wait again
-              echo "⏳ Waiting for Azure to clean up..."
-              sleep 30
-              
-              # Now try apply again
+              # Retry apply with additional retries if still fails
               echo "🔄 Retrying terraform apply..."
-              terraform apply -input=false -auto-approve tfplan || {
-                echo "❌ Terraform apply failed after retry"
-                echo "💡 If subnet is still in use, you may need to manually delete Container Apps Environment first"
+              MAX_RETRIES=3
+              RETRY_COUNT=0
+              
+              while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                if terraform apply -input=false -auto-approve tfplan; then
+                  echo "✅ Terraform apply succeeded on retry $((RETRY_COUNT + 1))"
+                  break
+                fi
+                
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                  echo "⚠️  Apply failed, waiting 30s before retry $((RETRY_COUNT + 1))/$MAX_RETRIES..."
+                  sleep 30
+                fi
+              done
+              
+              if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+                echo "❌ Terraform apply failed after $MAX_RETRIES retries"
+                echo "💡 Subnet may still be in use. Manual intervention may be required."
                 exit 1
-              }
+              fi
             else
-              echo "❌ Terraform apply failed (not a destroy operation)"
+              echo "❌ Terraform apply failed with different error:"
+              echo "$APPLY_ERROR"
               exit 1
             fi
           fi
