@@ -36,7 +36,8 @@ module "aca_env" {
   resource_group_name = azurerm_resource_group.this.name
   location            = var.location
   # Use subnet from network module if created, otherwise use provided subnet id
-  aca_subnet_id       = var.create_network ? module.network[0].aca_subnet_id : var.aca_subnet_id
+  # Using local to avoid circular dependency
+  aca_subnet_id       = local.aca_subnet_id_final
   tags                = var.tags
 }
 
