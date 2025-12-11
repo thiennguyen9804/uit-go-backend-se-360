@@ -167,8 +167,7 @@ async function updateDriverLocation(driver: User): Promise<void> {
 
 // === MỚI: Đăng ký FCM Instance ID cho tài xế (để nhận thông báo cuốc xe) ===
 async function registerFcmTokenForDriver(driver: User): Promise<void> {
-  const FIXED_FCM_TOKEN = "drsmTb9cRfa0ZuUSvWzIoj:APA91bFIbob_5ydBgajor0CHMmz8d3mKnNid1AyfYBiMIt2HOM4m5MHc-BMnJxTOgsPpobX8zDWd8GcICfe8z8D7U5QRKixoRa4JzXFrSEl32gDGlnsEtFw";
-
+  const FIXED_FCM_TOKEN = "";
   const payload = {
     userId: driver.userId,
     fcmToken: FIXED_FCM_TOKEN,
