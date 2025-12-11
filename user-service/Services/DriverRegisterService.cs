@@ -8,7 +8,7 @@ using user_service.Services.Interface;
 
 namespace user_service.Services;
 
-public class DriverRegisterService:IDriverRegisterService
+public class DriverRegisterService : IDriverRegisterService
 {
     protected IDriverRegisterRepository _driverRegisterRepository;
     protected IIdentityService _identityService;
@@ -16,21 +16,21 @@ public class DriverRegisterService:IDriverRegisterService
     protected IUnitOfWork _unitOfWork;
 
     public DriverRegisterService(
-        IDriverRegisterRepository driverRegisterRepository, 
-        IMapper mapper, 
+        IDriverRegisterRepository driverRegisterRepository,
+        IMapper mapper,
         IIdentityService identityService,
         DriverGrpcClient driverGrpcClient,
         IUnitOfWork unitOfWork)
     {
         _driverRegisterRepository = driverRegisterRepository;
-    _mapper = mapper;
-    _identityService = identityService;
+        _mapper = mapper;
+        _identityService = identityService;
         _driverGrpcClient = driverGrpcClient;
         _unitOfWork = unitOfWork;
     }
 
     protected IMapper _mapper;
-    
+
     public async Task<DriverRegisterDto> GetByIdAsync(Guid id)
     {
         var driverRegister = await _driverRegisterRepository.GetUserDriverRegisterByIdAsync(id);
@@ -48,9 +48,9 @@ public class DriverRegisterService:IDriverRegisterService
         }
 
         await _identityService.UpdateUserContactAsync(userId, registerDriverrDto.Name, registerDriverrDto.PhoneNumber);
-    var driverRegister = _mapper.Map<DriverRegister>(registerDriverrDto);
-    // ApplicationUser.Id is a string (Identity). store the Guid as string so EF can link the navigation.
-    driverRegister.UserId = userId.ToString();
+        var driverRegister = _mapper.Map<DriverRegister>(registerDriverrDto);
+        // ApplicationUser.Id is a string (Identity). store the Guid as string so EF can link the navigation.
+        driverRegister.UserId = userId.ToString();
         await _driverRegisterRepository.AddAsync(driverRegister);
         var dto = _mapper.Map<DriverRegisterDto>(driverRegister);
         dto.Name = registerDriverrDto.Name;
@@ -92,7 +92,7 @@ public class DriverRegisterService:IDriverRegisterService
 
     public async Task<DriverRegisterDto> UpdateAsync(Guid id, UpdateDriverRegisterDto updateRegisterDriverrDto)
     {
-        var register = await  _driverRegisterRepository.GetUserDriverRegisterByIdAsync(id);
+        var register = await _driverRegisterRepository.GetUserDriverRegisterByIdAsync(id);
         if (register == null)
         {
             throw new Exception("Driver Register not found");

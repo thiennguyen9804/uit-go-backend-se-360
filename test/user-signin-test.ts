@@ -79,7 +79,7 @@ export function setup() {
       },
     };
     
-    const response = http.post(`${BASE_URL}/user/register`, payload, params);
+    const response = http.post(`${BASE_URL}/user/login`, payload, params);
     
     if (response.status === 200 || response.status === 201) {
       console.log(`✅ Created user: ${user.email}`);
