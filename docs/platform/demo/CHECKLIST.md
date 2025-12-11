@@ -18,9 +18,10 @@
 ### 3. GitHub Setup
 - [ ] Repository cloned
 - [ ] GitHub Secrets configured:
-  - [ ] `AZURE_CREDENTIALS`
-  - [ ] `ACR_NAME` (sẽ được tạo)
-  - [ ] `ACA_SUBNET_ID` (sẽ được tạo)
+  - [ ] `AZURE_CREDENTIALS` (Service principal JSON)
+  - [ ] `ACR_NAME` (Azure Container Registry name)
+  - [ ] `AZURE_RG_NAME` (Resource Group name)
+  - [ ] `ACA_SUBNET_ID` (Subnet ID cho Container Apps)
 - [ ] Branch protection rules (optional)
 
 ### 4. Test Run

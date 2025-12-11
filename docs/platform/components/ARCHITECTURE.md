@@ -175,7 +175,7 @@ container_registry
 
 ### Secrets Management
 
-- **GitHub Secrets**: `AZURE_CREDENTIALS`, `ACR_NAME`, `ACA_SUBNET_ID`
+- **GitHub Secrets**: `AZURE_CREDENTIALS`, `ACR_NAME`, `AZURE_RG_NAME`, `ACA_SUBNET_ID`
 - **Azure Key Vault**: Database passwords, connection strings
 - **Managed Identity**: Service-to-service authentication
 

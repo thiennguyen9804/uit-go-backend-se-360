@@ -36,10 +36,17 @@ az account show
 
 ### 3. GitHub Secrets
 
-Đảm bảo các secrets sau đã được set trong GitHub:
-- `AZURE_CREDENTIALS`: Service principal credentials
-- `ACR_NAME`: Azure Container Registry name
-- `ACA_SUBNET_ID`: Subnet ID cho Container Apps (sẽ được tạo)
+Đảm bảo các secrets sau đã được set trong GitHub repository (Settings → Secrets and variables → Actions):
+
+**Bắt buộc:**
+- `AZURE_CREDENTIALS`: Service principal credentials (JSON format từ `az ad sp create-for-rbac --sdk-auth`)
+- `ACR_NAME`: Azure Container Registry name (chỉ tên, không có `.azurecr.io`)
+- `AZURE_RG_NAME`: Resource Group name để deploy service
+- `ACA_SUBNET_ID`: Subnet ID cho Container Apps Environment
+
+**Lưu ý:**
+- `AZURE_LOCATION` không cần thiết vì đã có default `"eastasia"` trong Terraform variables
+- Có thể override location bằng cách set `-var="location=..."` trong Terraform nếu cần
 
 ##  Demo Manual (Step-by-Step)
 
@@ -65,7 +72,7 @@ Script sẽ:
 ### BƯỚC 2: Setup Hạ Tầng Azure (5-10 phút)
 
 ```bash
-cd provision/complete_demo
+cd modules/self_service/examples
 
 # Initialize Terraform (sẽ dùng remote state từ Storage Account)
 terraform init
@@ -95,7 +102,11 @@ echo "Subnet ID: $ACA_SUBNET_ID"
 # Lưu các giá trị này cho GitHub Secrets
 echo " Set GitHub Secrets:"
 echo "   ACR_NAME=$(echo $ACR_LOGIN_SERVER | cut -d'.' -f1)"
+echo "   AZURE_RG_NAME=rg-demo-se360"
 echo "   ACA_SUBNET_ID=\"$ACA_SUBNET_ID\""
+echo ""
+echo " Tạo AZURE_CREDENTIALS bằng:"
+echo "   az ad sp create-for-rbac --name github-actions --role contributor --scopes /subscriptions/<subscription-id> --sdk-auth"
 
 cd ../..
 ```
