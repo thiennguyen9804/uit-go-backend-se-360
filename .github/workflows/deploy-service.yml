@@ -513,10 +513,32 @@ jobs:
             echo "❌ tfplan artifact missing. Plan step may have failed."
             exit 1
           fi
+          
+          # Show plan for validation
           terraform show -no-color tfplan > /tmp/tfplan.txt || {
             echo "❌ tfplan is invalid. Regenerate plan."
             exit 1
           }
+          
+          # Check for potential destroy order issues
+          if grep -q "module.network.*will be destroyed" /tmp/tfplan.txt; then
+            echo "⚠️  WARNING: Plan includes destroying network resources"
+            echo "   This may fail if subnet is in use by Container Apps Environment"
+            echo "   Best practice: Manage network separately from service deployment"
+            echo ""
+            echo "   To fix:"
+            echo "   1. Destroy Container Apps Environment first (if needed)"
+            echo "   2. Or use separate workflow to manage network"
+            echo ""
+            # Don't fail, but warn - let Terraform handle it
+          fi
+          
+          # Check for subnet destroy
+          if grep -q "azurerm_subnet.*will be destroyed" /tmp/tfplan.txt; then
+            echo "⚠️  WARNING: Plan includes destroying subnet"
+            echo "   This will fail if subnet is in use by Container Apps Environment"
+            echo ""
+          fi
       
       - name: Parse Service Config
         id: config
@@ -539,14 +561,42 @@ jobs:
           # Apply terraform plan
           # Best practice: Network is managed separately (create_network=false)
           # This avoids destroy order issues and keeps deployments fast and predictable
-          if ! terraform apply -input=false -auto-approve tfplan; then
+          if ! terraform apply -input=false -auto-approve tfplan 2>&1 | tee /tmp/apply_output.log; then
+            APPLY_ERROR=$(cat /tmp/apply_output.log)
+            
             echo "❌ Terraform apply failed"
             echo ""
-            echo "💡 Troubleshooting:"
-            echo "   - If error is about subnet in use: Network should be managed separately"
-            echo "   - Create network first: terraform apply -var='create_network=true' -var='deploy_service=false'"
-            echo "   - Then deploy services using existing subnet ID"
+            echo "Error details:"
+            echo "$APPLY_ERROR" | tail -20
             echo ""
+            
+            # Provide specific guidance based on error type
+            if echo "$APPLY_ERROR" | grep -q "InUseSubnetCannotBeDeleted\|subnet.*in use"; then
+              echo "🔴 Error: Subnet is in use and cannot be deleted"
+              echo ""
+              echo "💡 Solution:"
+              echo "   1. Network should be managed separately from service deployment"
+              echo "   2. If you need to recreate network:"
+              echo "      - First, manually delete Container Apps Environment via Azure Portal/CLI"
+              echo "      - Then run: terraform apply -var='create_network=true' -var='deploy_service=false'"
+              echo "   3. For service deployment, use existing subnet:"
+              echo "      - Set create_network=false (default)"
+              echo "      - Provide ACA_SUBNET_ID secret"
+              echo ""
+            elif echo "$APPLY_ERROR" | grep -q "Cycle\|circular"; then
+              echo "🔴 Error: Circular dependency detected"
+              echo ""
+              echo "💡 Solution: This is a Terraform configuration issue"
+              echo "   Contact platform team to fix module dependencies"
+              echo ""
+            else
+              echo "💡 General troubleshooting:"
+              echo "   - Check Terraform state: terraform state list"
+              echo "   - Verify all required secrets are set"
+              echo "   - Check Azure resource permissions"
+              echo ""
+            fi
+            
             exit 1
           fi
           
