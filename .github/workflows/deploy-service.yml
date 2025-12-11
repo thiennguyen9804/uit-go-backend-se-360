@@ -384,6 +384,15 @@ jobs:
           echo "ARM_TENANT_ID=$TENANT" >> $GITHUB_ENV
           echo "ARM_CLIENT_ID=$CLIENT" >> $GITHUB_ENV
           echo "ARM_CLIENT_SECRET=$SECRET" >> $GITHUB_ENV
+
+      - name: Validate required inputs (plan)
+        run: |
+          set -euo pipefail
+
+          if [ -z "${{ secrets.AZURE_RG_NAME }}" ]; then
+            echo "AZURE_RG_NAME secret is required (resource group for self-service example)."
+            exit 1
+          fi
       
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -425,6 +434,11 @@ jobs:
             -var="service_port=${{ steps.config.outputs.port }}" \
             -var="external=${{ steps.config.outputs.external }}" \
             -var="image=${{ needs.build-and-test.outputs.image }}" \
+            -var="cpu=${{ steps.config.outputs.cpu }}" \
+            -var="memory=${{ steps.config.outputs.memory }}" \
+            -var="min_replicas=${{ steps.config.outputs.min_replicas }}" \
+            -var="max_replicas=${{ steps.config.outputs.max_replicas }}" \
+            -var="resource_group_name=${{ secrets.AZURE_RG_NAME }}" \
             -out=tfplan | tee plan_output.txt
           
           echo "stdout<<EOF" >> $GITHUB_OUTPUT
@@ -464,6 +478,14 @@ jobs:
           echo "ARM_TENANT_ID=$TENANT" >> $GITHUB_ENV
           echo "ARM_CLIENT_ID=$CLIENT" >> $GITHUB_ENV
           echo "ARM_CLIENT_SECRET=$SECRET" >> $GITHUB_ENV
+
+      - name: Validate required inputs (apply)
+        run: |
+          set -euo pipefail
+          if [ -z "${{ secrets.AZURE_RG_NAME }}" ]; then
+            echo "AZURE_RG_NAME secret is required (resource group for self-service example)."
+            exit 1
+          fi
       
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -512,10 +534,23 @@ jobs:
           terraform apply -input=false -auto-approve tfplan
       
       - name: Get Service URL
-        if: steps.config.outputs.external == 'true'
+        id: outputs
+        working-directory: modules/self_service/examples
         run: |
-          SERVICE_NAME="${{ needs.discover-service.outputs.service_name }}"
-          echo "✅ Service deployed: $SERVICE_NAME"
-          echo "🔗 Check service status with:"
-          echo "   az containerapp show --name $SERVICE_NAME --resource-group <rg-name> --query 'properties.configuration.ingress.fqdn' -o tsv"
+          SERVICE_FQDN=$(terraform output -raw service_fqdn 2>/dev/null || echo "")
+          SERVICE_RG=$(terraform output -raw service_resource_group 2>/dev/null || echo "")
+          SERVICE_ACR=$(terraform output -raw service_acr 2>/dev/null || echo "")
+          
+          echo "service_fqdn=$SERVICE_FQDN" >> $GITHUB_OUTPUT
+          echo "service_rg=$SERVICE_RG" >> $GITHUB_OUTPUT
+          echo "service_acr=$SERVICE_ACR" >> $GITHUB_OUTPUT
+          
+          echo "✅ Service deployed: ${{ needs.discover-service.outputs.service_name }}"
+          echo "📦 ACR: $SERVICE_ACR"
+          echo "📁 Resource Group: $SERVICE_RG"
+          if [ -n "$SERVICE_FQDN" ]; then
+            echo "🔗 Service URL: https://$SERVICE_FQDN"
+          else
+            echo "⚠️  Service is internal (not externally accessible)"
+          fi
 
