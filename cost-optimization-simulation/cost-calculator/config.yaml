@@ -1,0 +1,116 @@
+# Azure Pricing Configuration
+# Update these values based on latest Azure pricing documentation
+# Prices are in USD
+
+pricing:
+  aca:
+    vcpu_per_second: 0.000012
+    memory_per_gb_second: 0.0000015
+    scale_to_zero: true
+    description: "Azure Container Apps - Consumption pricing with scale-to-zero"
+  
+  aci:
+    vcpu_per_second: 0.000012
+    memory_per_gb_second: 0.0000015
+    scale_to_zero: false
+    minimum_containers: 1
+    description: "Azure Container Instances - Per-second billing, less efficient scaling"
+  
+  aks:
+    on_demand:
+      vcpu_per_second: 0.0000133  # ~$0.048 per vCPU-hour
+      memory_per_gb_second: 0.00000139  # ~$0.005 per GB-hour
+      control_plane_per_hour: 0.10  # Free for first cluster
+      description: "AKS with on-demand nodes"
+    
+    spot:
+      vcpu_per_second: 0.000004  # ~70% discount from on-demand
+      memory_per_gb_second: 0.0000004  # ~70% discount
+      control_plane_per_hour: 0.10
+      spot_discount_percentage: 70
+      eviction_risk: "Medium"  # Spot instances can be evicted
+      description: "AKS with Spot instances - 60-80% cost savings"
+
+# Default resource allocations per service
+# These are used when actual metrics are not available
+default_resources:
+  api-gateway:
+    vcpu: 0.5
+    memory_gb: 1.0
+    min_replicas: 1
+    max_replicas: 3
+  
+  user-service:
+    vcpu: 0.5
+    memory_gb: 1.0
+    min_replicas: 1
+    max_replicas: 3
+  
+  driver-service:
+    vcpu: 0.5
+    memory_gb: 1.0
+    min_replicas: 1
+    max_replicas: 3
+  
+  trip-service:
+    vcpu: 0.5
+    memory_gb: 1.0
+    min_replicas: 1
+    max_replicas: 3
+  
+  matching-service:
+    vcpu: 0.5
+    memory_gb: 1.0
+    min_replicas: 0  # Can scale to zero
+    max_replicas: 3
+  
+  notification-service:
+    vcpu: 0.5
+    memory_gb: 1.0
+    min_replicas: 0  # Can scale to zero
+    max_replicas: 3
+
+# AKS specific configuration
+aks:
+  # Node pool configuration
+  system_node_pool:
+    vm_size: "Standard_B2s"  # 2 vCPU, 4 GB RAM
+    node_count: 1
+    mode: "on_demand"
+    description: "System pool for critical services"
+  
+  user_node_pool:
+    vm_size: "Standard_B2s"
+    min_nodes: 1
+    max_nodes: 3
+    mode: "spot"
+    max_price_percentage: 60  # Max 60% of on-demand price
+    description: "User pool with Spot instances for non-critical services"
+  
+  # Service placement
+  critical_services:  # Run on on-demand nodes
+    - api-gateway
+    - user-service
+    - driver-service
+    - trip-service
+  
+  non_critical_services:  # Can run on spot nodes
+    - matching-service
+    - notification-service
+
+# Cost calculation assumptions
+assumptions:
+  # Time periods for projection
+  hours_per_day: 24
+  days_per_month: 30
+  
+  # Traffic patterns
+  peak_hours_per_day: 8
+  off_peak_hours_per_day: 16
+  
+  # Scale-to-zero behavior
+  scale_to_zero_threshold_seconds: 300  # Scale down after 5 minutes idle
+  
+  # AKS overhead
+  node_overhead_per_node_per_hour: 0.01  # Estimated overhead cost
+  control_plane_overhead: true  # Include control plane cost
